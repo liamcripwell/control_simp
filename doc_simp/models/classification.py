@@ -30,12 +30,14 @@ class LightningBert(pl.LightningModule):
     def training_step(self, batch, batch_idx):
         input_ids, attention_mask, token_type_ids, labels = batch
 
-        loss, _ = self.model(
+        output = self.model(
                 input_ids,
                 token_type_ids=token_type_ids,
                 attention_mask=attention_mask,
                 labels=labels
                 )
+        loss = output["loss"]
+        _logits = output["logits"]
 
         output = {"train_loss": loss}
 
@@ -51,14 +53,19 @@ class LightningBert(pl.LightningModule):
     def validation_step(self, batch, batch_idx):
         input_ids, attention_mask, token_type_ids, labels = batch
 
-        loss, _ = self.model(
+        output = self.model(
                 input_ids,
                 token_type_ids=token_type_ids,
                 attention_mask=attention_mask,
                 labels=labels
                 )
+        loss = output["loss"]
+        logits = output["logits"]
 
-        output = {"val_loss": loss}
+        output = {
+            "val_loss": loss,
+            "preds": logits,
+        }
 
         return output
 
