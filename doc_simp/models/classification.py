@@ -123,7 +123,7 @@ class LightningBert(pl.LightningModule):
         parser.add_argument("--batch_size", type=int, default=16)
         parser.add_argument("--data_file", type=str, default=None, required=True)
         parser.add_argument("--data_file2", type=str, default=None, required=False)
-        parser.add_argument("--max_samples", type=float)
+        parser.add_argument("--max_samples", type=float, default=-1.0)
         parser.add_argument("--train_split", type=float, default=0.9)
 
         return parser
