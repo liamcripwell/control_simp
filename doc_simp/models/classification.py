@@ -1,3 +1,4 @@
+import math
 import argparse
 
 import torch
@@ -39,11 +40,11 @@ class LightningBert(pl.LightningModule):
         loss = output["loss"]
         _logits = output["logits"]
 
-        output = {"train_loss": loss}
+        output = {"loss": loss}
 
         # wandb log
         self.train_losses.append(loss)
-        if batch_idx % int(self.hparams.train_check_interval * self.trainer.num_training_batches) == 0:
+        if batch_idx % math.ceil(self.hparams.train_check_interval * self.trainer.num_training_batches) == 0:
             avg_loss = torch.stack(self.train_losses).mean()
             self.logger.experiment.log({'train_loss': avg_loss})
             self.train_losses = []
@@ -63,14 +64,14 @@ class LightningBert(pl.LightningModule):
         logits = output["logits"]
 
         output = {
-            "val_loss": loss,
+            "loss": loss,
             "preds": logits,
         }
 
         return output
 
     def validation_epoch_end(self, outputs, prefix="val"):
-        loss = torch.stack([x["val_loss"] for x in outputs]).mean()
+        loss = torch.stack([x["loss"] for x in outputs]).mean()
         preds = flatten_list([x["preds"] for x in outputs])
 
         # wandb log
