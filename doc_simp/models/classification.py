@@ -12,8 +12,6 @@ from doc_simp.models.utils import flatten_list
 
 class LightningBert(pl.LightningModule):
 
-    loss_names = ["loss"]
-
     def __init__(self, hparams):
         super().__init__()
 
@@ -65,10 +63,7 @@ class LightningBert(pl.LightningModule):
         return output
 
     def validation_epoch_end(self, outputs, prefix="val"):
-        losses = {k: torch.stack([x[k] for x in outputs]).mean()
-                  for k in self.loss_names}
-        loss = losses["loss"]
-
+        loss = torch.stack([x["val_loss"] for x in outputs]).mean()
         preds = flatten_list([x["preds"] for x in outputs])
 
         # wandb log
