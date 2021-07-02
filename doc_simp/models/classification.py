@@ -5,7 +5,6 @@ import numpy as np
 import pandas as pd
 import pytorch_lightning as pl
 from torch.utils.data import DataLoader, TensorDataset
-from tensorflow.keras.preprocessing.sequence import pad_sequences
 from transformers import BertTokenizer, AdamW, BertForSequenceClassification
 
 from doc_simp.models.utils import flatten_list
@@ -31,10 +30,7 @@ class LightningBert(pl.LightningModule):
         return self.model(input_ids, **kwargs)
 
     def training_step(self, batch, batch_idx):
-        labels = batch["label"]
-        input_ids = batch["input_ids"]
-        attention_mask = batch["attention_mask"]
-        token_type_ids = batch["token_type_ids"]
+        input_ids, attention_mask, token_type_ids, labels = batch
 
         loss, _ = self.model(
                 input_ids,
@@ -55,10 +51,7 @@ class LightningBert(pl.LightningModule):
         return output
 
     def validation_step(self, batch, batch_idx):
-        labels = batch["label"]
-        input_ids = batch["input_ids"]
-        attention_mask = batch["attention_mask"]
-        token_type_ids = batch["token_type_ids"]
+        input_ids, attention_mask, token_type_ids, labels = batch
 
         loss, _ = self.model(
                 input_ids,
@@ -185,6 +178,7 @@ class BertDataModule(pl.LightningDataModule):
         dataset = TensorDataset(
             self.train['input_ids'],
             self.train['attention_mask'],
+            self.train['token_type_ids'],
             self.train['labels'])
         train_data = DataLoader(dataset, batch_size=self.batch_size)
         return train_data
@@ -193,6 +187,7 @@ class BertDataModule(pl.LightningDataModule):
         dataset = TensorDataset(
             self.validate['input_ids'],
             self.validate['attention_mask'],
+            self.validate['token_type_ids'],
             self.validate['labels'])
         val_data = DataLoader(dataset, batch_size=self.batch_size)
         return val_data
@@ -201,28 +196,22 @@ class BertDataModule(pl.LightningDataModule):
         dataset = TensorDataset(
             self.test['input_ids'],
             self.test['attention_mask'],
+            self.test['token_type_ids'],
             self.test['labels'])
         test_data = DataLoader(dataset, batch_size=self.batch_size)
         return test_data
 
     def preprocess(self, seqs, labels=None):
-        # input ids
         seqs = ["[CLS]" + str(seq) + " [SEP]" for seq in seqs]
-        tokenized_seqs = [self.tokenizer.tokenize(seq) for seq in seqs]
-        input_ids = [self.tokenizer.convert_tokens_to_ids(x) for x in tokenized_seqs]
-        input_ids = pad_sequences(input_ids, maxlen=self.MAX_LEN, dtype="long", truncating="post", padding="post")
+        padded_sequences = self.tokenizer(seqs, padding=True)
+        input_ids = padded_sequences["input_ids"]
+        attention_mask = padded_sequences["attention_mask"]
+        token_type_ids = padded_sequences["token_type_ids"]
 
-        # attention masks
-        attention_masks = []
-        for seq in input_ids:
-            seq_mask = [1] * len(seq)
-            attention_masks.append(seq_mask)
-
-        inputs = torch.tensor(input_ids)
-        masks = torch.tensor(attention_masks)
         data = {
-            "input_ids": inputs,
-            "attention_mask": masks
+            "input_ids": torch.tensor(input_ids),
+            "attention_mask": torch.tensor(attention_mask),
+            "token_type_ids": torch.tensor(token_type_ids),
         }
         if labels is not None:
             data["labels"] = torch.tensor(labels)
