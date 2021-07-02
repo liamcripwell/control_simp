@@ -135,6 +135,8 @@ class LightningBert(pl.LightningModule):
 
 class BertDataModule(pl.LightningDataModule):
 
+    MAX_LEN = 128
+
     def __init__(self, tokenizer, hparams=None):
         super().__init__()
         self.tokenizer = tokenizer
