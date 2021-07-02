@@ -16,7 +16,10 @@ class LightningBert(pl.LightningModule):
     loss_names = ["loss"]
 
     def __init__(self, hparams):
+        super().__init__()
+
         self.model = BertForSequenceClassification.from_pretrained("bert-base-uncased", num_labels=3)
+        self.tokenizer = BertTokenizer.from_pretrained("bert-base-uncased", do_lower_case=True)
 
         # basic hyperparams
         self.hparams = hparams
@@ -132,9 +135,9 @@ class LightningBert(pl.LightningModule):
 
 class BertDataModule(pl.LightningDataModule):
 
-    def __init__(self, hparams):
+    def __init__(self, tokenizer, hparams):
         super().__init__()
-        self.tokenizer = BertTokenizer.from_pretrained("bert-base-uncased", do_lower_case=True)
+        self.tokenizer = tokenizer
 
         # set hyperparams
         self.hparams = hparams
