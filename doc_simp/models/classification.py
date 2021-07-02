@@ -135,19 +135,20 @@ class LightningBert(pl.LightningModule):
 
 class BertDataModule(pl.LightningDataModule):
 
-    def __init__(self, tokenizer, hparams):
+    def __init__(self, tokenizer, hparams=None):
         super().__init__()
         self.tokenizer = tokenizer
 
-        # set hyperparams
-        self.hparams = hparams
-        self.x_col = self.hparams.x_col
-        self.y_col = self.hparams.y_col
-        self.data_file = self.hparams.data_file
-        self.batch_size = self.hparams.batch_size
-        self.max_samples = int(self.hparams.max_samples)  # defaults to no restriction
-        self.train_split = self.hparams.train_split  # default split will be 90/5/5
-        self.val_split = (1 - self.train_split) / 2
+        if hparams != None:
+            # set hyperparams
+            self.hparams = hparams
+            self.x_col = self.hparams.x_col
+            self.y_col = self.hparams.y_col
+            self.data_file = self.hparams.data_file
+            self.batch_size = self.hparams.batch_size
+            self.max_samples = int(self.hparams.max_samples)  # defaults to no restriction
+            self.train_split = self.hparams.train_split  # default split will be 90/5/5
+            self.val_split = (1 - self.train_split) / 2
 
     def prepare_data(self):
         # NOTE: shouldn't assign state in here
