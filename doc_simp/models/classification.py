@@ -156,7 +156,7 @@ class BertDataModule(pl.LightningDataModule):
         # NOTE: shouldn't assign state in here
         pass
 
-    def setup(self):
+    def setup(self, stage):
         self.data = pd.read_csv(self.data_file)
         self.data = self.data.sample(frac=1)[:self.max_samples]
         print("All data loaded.")
