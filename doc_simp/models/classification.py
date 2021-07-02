@@ -8,7 +8,7 @@ from torch.utils.data import DataLoader, TensorDataset
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 from transformers import BertTokenizer, AdamW, BertForSequenceClassification
 
-from utils import flatten_list
+from doc_simp.models.utils import flatten_list
 
 
 class LightningBert(pl.LightningModule):

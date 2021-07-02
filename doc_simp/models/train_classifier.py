@@ -3,7 +3,7 @@ import argparse
 import pytorch_lightning as pl
 from pytorch_lightning.loggers import WandbLogger
 
-from classification import LightningBert, BertDataModule
+from doc_simp.models.classification import LightningBert, BertDataModule
 
 if __name__ == '__main__':
     """
