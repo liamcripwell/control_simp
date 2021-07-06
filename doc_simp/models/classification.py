@@ -125,6 +125,7 @@ class LightningBert(pl.LightningModule):
         parser.add_argument("--data_file2", type=str, default=None, required=False)
         parser.add_argument("--max_samples", type=float, default=-1.0)
         parser.add_argument("--train_split", type=float, default=0.9)
+        parser.add_argument("--val_split", type=float, default=0.1)
 
         return parser
 
@@ -145,8 +146,8 @@ class BertDataModule(pl.LightningDataModule):
             self.data_file = self.hparams.data_file
             self.batch_size = self.hparams.batch_size
             self.max_samples = int(self.hparams.max_samples)  # defaults to no restriction
-            self.train_split = self.hparams.train_split  # default split will be 90/5/5
-            self.val_split = (1 - self.train_split) / 2
+            self.train_split = self.hparams.train_split  # default split will be 90/10/0
+            self.val_split = min(self.hparams.val_split, 100 - self.train_split)
 
     def prepare_data(self):
         # NOTE: shouldn't assign state in here
@@ -158,10 +159,10 @@ class BertDataModule(pl.LightningDataModule):
         print("All data loaded.")
 
         # train, validation, test split
-        train_size = int(self.train_split * len(self.data))
-        val_size = int((self.train_split + self.val_split) * len(self.data))
+        train_span = int(self.train_split * len(self.data))
+        val_span = int((self.train_split + self.val_split) * len(self.data))
         self.train, self.validate, self.test = np.split(
-            self.data, [train_size, val_size])
+            self.data, [train_span, val_span])
 
         # tokenize datasets
         self.train = self.preprocess(
@@ -183,7 +184,7 @@ class BertDataModule(pl.LightningDataModule):
             self.train['attention_mask'],
             self.train['token_type_ids'],
             self.train['labels'])
-        train_data = DataLoader(dataset, batch_size=self.batch_size)
+        train_data = DataLoader(dataset, batch_size=self.batch_size, shuffle=True)
         return train_data
 
     def val_dataloader(self):
@@ -192,7 +193,7 @@ class BertDataModule(pl.LightningDataModule):
             self.validate['attention_mask'],
             self.validate['token_type_ids'],
             self.validate['labels'])
-        val_data = DataLoader(dataset, batch_size=self.batch_size)
+        val_data = DataLoader(dataset, batch_size=self.batch_size, shuffle=True)
         return val_data
 
     def test_dataloader(self):
@@ -201,7 +202,7 @@ class BertDataModule(pl.LightningDataModule):
             self.test['attention_mask'],
             self.test['token_type_ids'],
             self.test['labels'])
-        test_data = DataLoader(dataset, batch_size=self.batch_size)
+        test_data = DataLoader(dataset, batch_size=self.batch_size, shuffle=True)
         return test_data
 
     def preprocess(self, seqs, labels=None):
