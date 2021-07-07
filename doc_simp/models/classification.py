@@ -147,7 +147,7 @@ class BertDataModule(pl.LightningDataModule):
             self.batch_size = self.hparams.batch_size
             self.max_samples = int(self.hparams.max_samples)  # defaults to no restriction
             self.train_split = self.hparams.train_split  # default split will be 90/10/0
-            self.val_split = min(self.hparams.val_split, 100 - self.train_split)
+            self.val_split = min(self.hparams.val_split, 1 - self.train_split)
 
     def prepare_data(self):
         # NOTE: shouldn't assign state in here
