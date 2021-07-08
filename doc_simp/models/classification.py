@@ -11,6 +11,30 @@ from transformers import BertTokenizer, AdamW, BertForSequenceClassification
 from doc_simp.models.utils import flatten_list
 
 
+def run_classifier(model, input_file, input_col="complex", max_samples=-1):
+    test_set = pd.read_csv(input_file)[:max_samples]
+
+    dm = BertDataModule(model.tokenizer, hparams=model.hparams)
+    test = dm.preprocess(list(test_set[input_col]))
+    dataset = TensorDataset(
+            test['input_ids'],
+            test['attention_mask'],
+            test['token_type_ids'])
+    test_data = DataLoader(dataset, batch_size=16)
+
+    preds = []
+    for batch in test_data:
+        input_ids, attention_mask, token_type_ids = batch
+        output = model.model(
+                    input_ids,
+                    token_type_ids=token_type_ids,
+                    attention_mask=attention_mask,
+                    )
+        preds += output["logits"]
+    
+    return preds
+
+
 class LightningBert(pl.LightningModule):
 
     def __init__(self, hparams):
