@@ -52,7 +52,11 @@ class LightningBert(pl.LightningModule):
         return output
 
     def validation_step(self, batch, batch_idx):
-        input_ids, attention_mask, token_type_ids, labels = batch
+        if len(batch) == 3:
+            input_ids, attention_mask, token_type_ids = batch
+            labels = None
+        else:
+            input_ids, attention_mask, token_type_ids, labels = batch
 
         output = self.model(
                 input_ids,
