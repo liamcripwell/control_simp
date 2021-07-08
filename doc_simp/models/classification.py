@@ -11,8 +11,8 @@ from transformers import BertTokenizer, AdamW, BertForSequenceClassification
 from doc_simp.models.utils import flatten_list
 
 
-def run_classifier(model, input_file, input_col="complex", max_samples=-1):
-    test_set = pd.read_csv(input_file)[:max_samples]
+def run_classifier(model, input_df, input_col="complex", max_samples=-1):
+    test_set = input_df[:max_samples]
 
     dm = BertDataModule(model.tokenizer, hparams=model.hparams)
     test = dm.preprocess(list(test_set[input_col]))
