@@ -30,9 +30,20 @@ def run_classifier(model, input_df, input_col="complex", max_samples=-1):
                     token_type_ids=token_type_ids,
                     attention_mask=attention_mask,
                     )
-        preds += output["logits"]
+        loss, logits = extract_results(output)
+        preds += logits
     
     return preds
+
+def extract_results(output):
+    if type(output) is tuple:
+        loss = output[0]
+        logits = output[1]
+    else:
+        loss = output["loss"]
+        logits = output["logits"]
+
+    return loss, logits
 
 
 class LightningBert(pl.LightningModule):
@@ -61,8 +72,7 @@ class LightningBert(pl.LightningModule):
                 attention_mask=attention_mask,
                 labels=labels
                 )
-        loss = output["loss"]
-        _logits = output["logits"]
+        loss, _logits = extract_results(output)
 
         output = {"loss": loss}
 
@@ -88,8 +98,7 @@ class LightningBert(pl.LightningModule):
                 attention_mask=attention_mask,
                 labels=labels
                 )
-        loss = output["loss"]
-        logits = output["logits"]
+        loss, logits = extract_results(output)
 
         output = {
             "loss": loss,
