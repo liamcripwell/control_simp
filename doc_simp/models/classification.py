@@ -40,7 +40,9 @@ def extract_results(output):
         loss = output[0]
         logits = output[1]
     else:
-        loss = output["loss"]
+        loss = None
+        if "loss" in output:
+            loss = output["loss"]
         logits = output["logits"]
 
     return loss, logits
