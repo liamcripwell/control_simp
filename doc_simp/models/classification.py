@@ -17,9 +17,9 @@ def run_classifier(model, input_df, input_col="complex", max_samples=-1, device=
     dm = BertDataModule(model.tokenizer, hparams=model.hparams)
     test = dm.preprocess(list(test_set[input_col]))
     dataset = TensorDataset(
-            test['input_ids'],
-            test['attention_mask'],
-            test['token_type_ids']).to(device)
+            test['input_ids'].to(device),
+            test['attention_mask'].to(device),
+            test['token_type_ids'].to(device))
     test_data = DataLoader(dataset, batch_size=16)
 
     preds = []
