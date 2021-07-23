@@ -19,8 +19,8 @@ def run_classifier(model, input_df, input_col="complex", max_samples=-1, device=
     dataset = TensorDataset(
             test['input_ids'],
             test['attention_mask'],
-            test['token_type_ids'])
-    test_data = DataLoader(dataset, batch_size=16).to(device)
+            test['token_type_ids']).to(device)
+    test_data = DataLoader(dataset, batch_size=16)
 
     preds = []
     for batch in test_data:
