@@ -11,7 +11,7 @@ from transformers import BertTokenizer, AdamW, BertForSequenceClassification
 from doc_simp.models.utils import flatten_list
 
 
-def run_classifier(model, input_df, input_col="complex", max_samples=-1):
+def run_classifier(model, input_df, input_col="complex", max_samples=-1, device="cuda"):
     test_set = input_df[:max_samples]
 
     dm = BertDataModule(model.tokenizer, hparams=model.hparams)
@@ -20,7 +20,7 @@ def run_classifier(model, input_df, input_col="complex", max_samples=-1):
             test['input_ids'],
             test['attention_mask'],
             test['token_type_ids'])
-    test_data = DataLoader(dataset, batch_size=16)
+    test_data = DataLoader(dataset, batch_size=16).to(device)
 
     preds = []
     for batch in test_data:
