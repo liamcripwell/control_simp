@@ -11,8 +11,9 @@ from transformers import BertTokenizer, AdamW, BertForSequenceClassification
 from doc_simp.models.utils import flatten_list
 
 
-def run_classifier(model, input_df, input_col="complex", max_samples=-1, device="cuda"):
-    test_set = input_df[:max_samples]
+def run_classifier(model, input_df, input_col="complex", max_samples=None, device="cuda"):
+    if max_samples is not None:
+        test_set = input_df[:max_samples]
 
     with torch.no_grad():
         dm = BertDataModule(model.tokenizer, hparams=model.hparams)
@@ -195,7 +196,7 @@ class BertDataModule(pl.LightningDataModule):
 
     def setup(self, stage):
         self.data = pd.read_csv(self.data_file)
-        self.data = self.data.sample(frac=1)[:self.max_samples]
+        self.data = self.data.sample(frac=1)[:self.max_samples] # NOTE: this will actually exclude the last item
         print("All data loaded.")
 
         # train, validation, test split
