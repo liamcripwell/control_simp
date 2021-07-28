@@ -11,9 +11,9 @@ from transformers import BertTokenizer, AdamW, BertForSequenceClassification
 from doc_simp.models.utils import flatten_list
 
 
-def run_classifier(model, input_df, input_col="complex", max_samples=None, device="cuda"):
+def run_classifier(model, test_set, input_col="complex", max_samples=None, device="cuda"):
     if max_samples is not None:
-        test_set = input_df[:max_samples]
+        test_set = test_set[:max_samples]
 
     with torch.no_grad():
         dm = BertDataModule(model.tokenizer, hparams=model.hparams)
