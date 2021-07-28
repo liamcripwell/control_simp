@@ -32,6 +32,9 @@ def run_classifier(model, input_df, input_col="complex", max_samples=-1, device=
                     )
         loss, logits = extract_results(output)
         preds += logits
+
+    del dataset
+    del test_data
     
     return preds
 
