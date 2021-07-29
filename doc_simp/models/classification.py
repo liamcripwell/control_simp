@@ -11,27 +11,29 @@ from transformers import BertTokenizer, AdamW, BertForSequenceClassification
 from doc_simp.models.utils import flatten_list
 
 
-def run_classifier(model, input_df, input_col="complex", max_samples=-1, device="cuda"):
-    test_set = input_df[:max_samples]
+def run_classifier(model, test_set, input_col="complex", max_samples=None, device="cuda"):
+    if max_samples is not None:
+        test_set = test_set[:max_samples]
 
-    dm = BertDataModule(model.tokenizer, hparams=model.hparams)
-    test = dm.preprocess(list(test_set[input_col]))
-    dataset = TensorDataset(
-            test['input_ids'].to(device),
-            test['attention_mask'].to(device),
-            test['token_type_ids'].to(device))
-    test_data = DataLoader(dataset, batch_size=16)
+    with torch.no_grad():
+        dm = BertDataModule(model.tokenizer, hparams=model.hparams)
+        test = dm.preprocess(list(test_set[input_col]))
+        dataset = TensorDataset(
+                test['input_ids'].to(device),
+                test['attention_mask'].to(device),
+                test['token_type_ids'].to(device))
+        test_data = DataLoader(dataset, batch_size=16)
 
-    preds = []
-    for batch in test_data:
-        input_ids, attention_mask, token_type_ids = batch
-        output = model.model(
-                    input_ids,
-                    token_type_ids=token_type_ids,
-                    attention_mask=attention_mask,
-                    )
-        loss, logits = extract_results(output)
-        preds += logits
+        preds = []
+        for batch in test_data:
+            input_ids, attention_mask, token_type_ids = batch
+            output = model.model(
+                        input_ids,
+                        token_type_ids=token_type_ids,
+                        attention_mask=attention_mask,
+                        )
+            loss, logits = extract_results(output)
+            preds += logits
     
     return preds
 
@@ -194,7 +196,7 @@ class BertDataModule(pl.LightningDataModule):
 
     def setup(self, stage):
         self.data = pd.read_csv(self.data_file)
-        self.data = self.data.sample(frac=1)[:self.max_samples]
+        self.data = self.data.sample(frac=1)[:self.max_samples] # NOTE: this will actually exclude the last item
         print("All data loaded.")
 
         # train, validation, test split
