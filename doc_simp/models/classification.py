@@ -144,7 +144,7 @@ class LightningBert(pl.LightningModule):
         
         # use a learning rate scheduler if specified
         if self.use_lr_scheduler:
-            scheduler = torch.optim.ReduceLROnPlateau(optimizer, 'min')
+            scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min')
             return {
                 "optimizer": optimizer,
                 "lr_scheduler": {
