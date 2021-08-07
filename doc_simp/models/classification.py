@@ -149,7 +149,7 @@ class LightningBert(pl.LightningModule):
                 "optimizer": optimizer,
                 "lr_scheduler": {
                     "scheduler": scheduler,
-                    "monitor": "loss",
+                    "monitor": "val_loss",
                 },
             }
 
