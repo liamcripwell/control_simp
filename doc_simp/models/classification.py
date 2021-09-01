@@ -221,7 +221,7 @@ class BertDataModule(pl.LightningDataModule):
             # extract samples based on values in "idx" col in val_file
             val_idxs = pd.read_csv(self.val_file)
             self.train = self.data
-            self.validate = self.data.loc[val_idxs.idx]
+            self.validate = self.data.loc[val_idxs[val_idxs.idx < len(self.train)].idx]
             self.test = []
 
         # tokenize datasets
