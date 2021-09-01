@@ -61,6 +61,7 @@ class LightningBert(pl.LightningModule):
         # basic hyperparams
         self.hparams = hparams
         self.learning_rate = self.hparams.learning_rate
+        self.use_lr_scheduler = self.hparams.lr_scheduler
 
         self.train_losses = []
 
@@ -139,10 +140,18 @@ class LightningBert(pl.LightningModule):
                     "weight_decay_rate": 0.0
                     },
                 ]
-        optimizer = AdamW(
-                optimizer_grouped_parameters,
-                lr=self.learning_rate,
-                )
+        optimizer = AdamW(optimizer_grouped_parameters, lr=self.learning_rate)
+        
+        # use a learning rate scheduler if specified
+        if self.use_lr_scheduler:
+            scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min')
+            return {
+                "optimizer": optimizer,
+                "lr_scheduler": {
+                    "scheduler": scheduler,
+                    "monitor": "val_loss",
+                },
+            }
 
         return optimizer
 
@@ -161,6 +170,7 @@ class LightningBert(pl.LightningModule):
         parser.add_argument("--freeze_encoder", action="store_true")
         parser.add_argument("--freeze_embeds", action="store_true")
         parser.add_argument("--learning_rate", type=float, default=2e-5)
+        parser.add_argument("--lr_scheduler", action="store_true")
         parser.add_argument("--batch_size", type=int, default=16)
         parser.add_argument("--data_file", type=str, default=None, required=True)
         parser.add_argument("--data_file2", type=str, default=None, required=False)
