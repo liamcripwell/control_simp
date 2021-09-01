@@ -177,6 +177,7 @@ class LightningBert(pl.LightningModule):
         parser.add_argument("--max_samples", type=float, default=-1.0)
         parser.add_argument("--train_split", type=float, default=0.9)
         parser.add_argument("--val_split", type=float, default=0.1)
+        parser.add_argument("--val_file", type=str, default=None, required=False)
 
         return parser
 
@@ -199,6 +200,7 @@ class BertDataModule(pl.LightningDataModule):
             self.max_samples = int(self.hparams.max_samples)  # defaults to no restriction
             self.train_split = self.hparams.train_split  # default split will be 90/10/0
             self.val_split = min(self.hparams.val_split, 1 - self.train_split)
+            self.val_file = self.hparams.val_file
 
     def prepare_data(self):
         # NOTE: shouldn't assign state in here
@@ -211,9 +213,16 @@ class BertDataModule(pl.LightningDataModule):
 
         # train, validation, test split
         train_span = int(self.train_split * len(self.data))
-        val_span = int((self.train_split + self.val_split) * len(self.data))
-        self.train, self.validate, self.test = np.split(
-            self.data, [train_span, val_span])
+        if self.val_file is None:
+            val_span = int((self.train_split + self.val_split) * len(self.data))
+            self.train, self.validate, self.test = np.split(
+                self.data, [train_span, val_span])
+        else:
+            # extract samples based on values in "idx" col in val_file
+            val_idxs = pd.read_csv(self.val_file)
+            self.train = self.data
+            self.validate = self.data.loc[val_idxs.idx]
+            self.test = []
 
         # tokenize datasets
         self.train = self.preprocess(
