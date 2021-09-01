@@ -224,6 +224,7 @@ class BertDataModule(pl.LightningDataModule):
                 self.data, [train_span, val_span])
         else:
             self.train = self.data
+            self.test = self.data[:1] # arbitrarily have 1 test sample to avoid errors
 
         # tokenize datasets
         self.train = self.preprocess(
@@ -268,7 +269,7 @@ class BertDataModule(pl.LightningDataModule):
 
     def preprocess(self, seqs, labels=None):
         seqs = ["[CLS]" + str(seq) + " [SEP]" for seq in seqs]
-        padded_sequences = self.tokenizer(seqs, padding=True)
+        padded_sequences = self.tokenizer(seqs, padding=True, truncation=True)
         input_ids = padded_sequences["input_ids"]
         attention_mask = padded_sequences["attention_mask"]
         token_type_ids = padded_sequences["token_type_ids"]
