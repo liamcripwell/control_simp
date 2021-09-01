@@ -174,7 +174,7 @@ class LightningBert(pl.LightningModule):
         parser.add_argument("--batch_size", type=int, default=16)
         parser.add_argument("--data_file", type=str, default=None, required=True)
         parser.add_argument("--data_file2", type=str, default=None, required=False)
-        parser.add_argument("--max_samples", type=float, default=-1.0)
+        parser.add_argument("--max_samples", type=int, default=-1)
         parser.add_argument("--train_split", type=float, default=0.9)
         parser.add_argument("--val_split", type=float, default=0.1)
         parser.add_argument("--val_file", type=str, default=None, required=False)
@@ -197,7 +197,7 @@ class BertDataModule(pl.LightningDataModule):
             self.y_col = self.hparams.y_col
             self.data_file = self.hparams.data_file
             self.batch_size = self.hparams.batch_size
-            self.max_samples = int(self.hparams.max_samples)  # defaults to no restriction
+            self.max_samples = self.hparams.max_samples  # defaults to no restriction
             self.train_split = self.hparams.train_split  # default split will be 90/10/0
             self.val_split = min(self.hparams.val_split, 1 - self.train_split)
             self.val_file = self.hparams.val_file
@@ -208,21 +208,22 @@ class BertDataModule(pl.LightningDataModule):
 
     def setup(self, stage):
         self.data = pd.read_csv(self.data_file)
+        # strip out validation samples if specified
+        if self.val_file is not None:
+            val_file = pd.read_csv(self.val_file)
+            self.validate = self.data.loc[val_file.idx]
+            self.data = self.data[self.data.index.isin(val_file.idx)]
         self.data = self.data.sample(frac=1)[:self.max_samples] # NOTE: this will actually exclude the last item
         print("All data loaded.")
 
         # train, validation, test split
-        train_span = int(self.train_split * len(self.data))
         if self.val_file is None:
+            train_span = int(self.train_split * len(self.data))
             val_span = int((self.train_split + self.val_split) * len(self.data))
             self.train, self.validate, self.test = np.split(
                 self.data, [train_span, val_span])
         else:
-            # extract samples based on values in "idx" col in val_file
-            val_idxs = pd.read_csv(self.val_file)
             self.train = self.data
-            self.validate = self.data.loc[val_idxs[val_idxs.idx < len(self.train)].idx]
-            self.test = []
 
         # tokenize datasets
         self.train = self.preprocess(
