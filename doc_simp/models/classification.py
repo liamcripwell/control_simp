@@ -212,7 +212,7 @@ class BertDataModule(pl.LightningDataModule):
         if self.val_file is not None:
             print("Loading specific validation samples...")
             val_file = pd.read_csv(self.val_file)
-            self.validate = self.data[self.data.index.isin(val_file.idx)]
+            self.validate = self.data.loc[val_file.idx]
             self.data = self.data[~self.data.index.isin(val_file.idx)]
         self.data = self.data.sample(frac=1)[:self.max_samples] # NOTE: this will actually exclude the last item
         print("All data loaded.")
