@@ -256,7 +256,7 @@ class BertDataModule(pl.LightningDataModule):
             self.validate['attention_mask'],
             self.validate['token_type_ids'],
             self.validate['labels'])
-        val_data = DataLoader(dataset, batch_size=self.batch_size, shuffle=True)
+        val_data = DataLoader(dataset, batch_size=self.batch_size)
         return val_data
 
     def test_dataloader(self):
@@ -265,7 +265,7 @@ class BertDataModule(pl.LightningDataModule):
             self.test['attention_mask'],
             self.test['token_type_ids'],
             self.test['labels'])
-        test_data = DataLoader(dataset, batch_size=self.batch_size, shuffle=True)
+        test_data = DataLoader(dataset, batch_size=self.batch_size)
         return test_data
 
     def preprocess(self, seqs, labels=None):
