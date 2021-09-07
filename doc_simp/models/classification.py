@@ -214,7 +214,7 @@ class BertDataModule(pl.LightningDataModule):
             val_file = pd.read_csv(self.val_file)
             self.validate = self.data.loc[val_file.idx]
             self.data = self.data[~self.data.index.isin(val_file.idx)]
-        self.data = self.data.sample(frac=1)[:self.max_samples] # NOTE: this will actually exclude the last item
+        self.data = self.data.sample(frac=1)[:min(self.max_samples, len(self.data))] # NOTE: this will actually exclude the last item
         print("All data loaded.")
 
         # train, validation, test split
@@ -225,7 +225,7 @@ class BertDataModule(pl.LightningDataModule):
                 self.data, [train_span, val_span])
         else:
             self.train = self.data
-            self.test = self.data[:1] # arbitrarily have 1 test sample to avoid errors
+            self.test = self.data[:12] # arbitrarily have 12 test samples as precaution
 
         # tokenize datasets
         self.train = self.preprocess(
