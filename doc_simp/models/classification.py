@@ -55,7 +55,7 @@ class LightningBert(pl.LightningModule):
     def __init__(self, hparams):
         super().__init__()
 
-        self.model = BertForSequenceClassification.from_pretrained("bert-base-uncased", num_labels=3)
+        self.model = BertForSequenceClassification.from_pretrained("bert-base-uncased", num_labels=4)
         self.tokenizer = BertTokenizer.from_pretrained("bert-base-uncased", do_lower_case=True)
 
         # basic hyperparams
@@ -174,9 +174,10 @@ class LightningBert(pl.LightningModule):
         parser.add_argument("--batch_size", type=int, default=16)
         parser.add_argument("--data_file", type=str, default=None, required=True)
         parser.add_argument("--data_file2", type=str, default=None, required=False)
-        parser.add_argument("--max_samples", type=float, default=-1.0)
+        parser.add_argument("--max_samples", type=int, default=-1)
         parser.add_argument("--train_split", type=float, default=0.9)
         parser.add_argument("--val_split", type=float, default=0.1)
+        parser.add_argument("--val_file", type=str, default=None, required=False)
 
         return parser
 
@@ -196,9 +197,10 @@ class BertDataModule(pl.LightningDataModule):
             self.y_col = self.hparams.y_col
             self.data_file = self.hparams.data_file
             self.batch_size = self.hparams.batch_size
-            self.max_samples = int(self.hparams.max_samples)  # defaults to no restriction
+            self.max_samples = self.hparams.max_samples  # defaults to no restriction
             self.train_split = self.hparams.train_split  # default split will be 90/10/0
             self.val_split = min(self.hparams.val_split, 1 - self.train_split)
+            self.val_file = self.hparams.val_file
 
     def prepare_data(self):
         # NOTE: shouldn't assign state in here
@@ -206,14 +208,21 @@ class BertDataModule(pl.LightningDataModule):
 
     def setup(self, stage):
         self.data = pd.read_csv(self.data_file)
-        self.data = self.data.sample(frac=1)[:self.max_samples] # NOTE: this will actually exclude the last item
+        self.data = self.data.sample(frac=1)[:min(self.max_samples, len(self.data))] # NOTE: this will actually exclude the last item
+        if self.val_file is not None:
+            print("Loading specific validation samples...")
+            self.validate = pd.read_csv(self.val_file)
         print("All data loaded.")
 
         # train, validation, test split
-        train_span = int(self.train_split * len(self.data))
-        val_span = int((self.train_split + self.val_split) * len(self.data))
-        self.train, self.validate, self.test = np.split(
-            self.data, [train_span, val_span])
+        if self.val_file is None:
+            train_span = int(self.train_split * len(self.data))
+            val_span = int((self.train_split + self.val_split) * len(self.data))
+            self.train, self.validate, self.test = np.split(
+                self.data, [train_span, val_span])
+        else:
+            self.train = self.data
+            self.test = self.data[:12] # arbitrarily have 12 test samples as precaution
 
         # tokenize datasets
         self.train = self.preprocess(
@@ -244,7 +253,7 @@ class BertDataModule(pl.LightningDataModule):
             self.validate['attention_mask'],
             self.validate['token_type_ids'],
             self.validate['labels'])
-        val_data = DataLoader(dataset, batch_size=self.batch_size, shuffle=True)
+        val_data = DataLoader(dataset, batch_size=self.batch_size)
         return val_data
 
     def test_dataloader(self):
@@ -253,12 +262,12 @@ class BertDataModule(pl.LightningDataModule):
             self.test['attention_mask'],
             self.test['token_type_ids'],
             self.test['labels'])
-        test_data = DataLoader(dataset, batch_size=self.batch_size, shuffle=True)
+        test_data = DataLoader(dataset, batch_size=self.batch_size)
         return test_data
 
     def preprocess(self, seqs, labels=None):
         seqs = ["[CLS]" + str(seq) + " [SEP]" for seq in seqs]
-        padded_sequences = self.tokenizer(seqs, padding=True)
+        padded_sequences = self.tokenizer(seqs, padding=True, truncation=True)
         input_ids = padded_sequences["input_ids"]
         attention_mask = padded_sequences["attention_mask"]
         token_type_ids = padded_sequences["token_type_ids"]
