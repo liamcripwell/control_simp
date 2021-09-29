@@ -208,13 +208,10 @@ class BertDataModule(pl.LightningDataModule):
 
     def setup(self, stage):
         self.data = pd.read_csv(self.data_file)
-        # strip out validation samples if specified
+        self.data = self.data.sample(frac=1)[:min(self.max_samples, len(self.data))] # NOTE: this will actually exclude the last item
         if self.val_file is not None:
             print("Loading specific validation samples...")
-            val_file = pd.read_csv(self.val_file)
-            self.validate = self.data.loc[val_file.idx]
-            self.data = self.data[~self.data.index.isin(val_file.idx)]
-        self.data = self.data.sample(frac=1)[:min(self.max_samples, len(self.data))] # NOTE: this will actually exclude the last item
+            self.validate = pd.read_csv(self.val_file)
         print("All data loaded.")
 
         # train, validation, test split
