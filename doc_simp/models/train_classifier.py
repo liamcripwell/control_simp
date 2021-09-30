@@ -36,6 +36,7 @@ if __name__ == '__main__':
         args,
         val_check_interval=args.val_check_interval,
         logger=wandb_logger,
-        accelerator="ddp")
+        accelerator="ddp",
+        precision=16,)
 
     trainer.fit(model, dm)
