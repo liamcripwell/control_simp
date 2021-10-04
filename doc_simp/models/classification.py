@@ -53,11 +53,11 @@ def extract_results(output):
 
 class LightningBert(pl.LightningModule):
 
-    def __init__(self, hparams):
+    def __init__(self, hparams, pt_model="bert-base-uncased"):
         super().__init__()
 
-        self.model = BertForSequenceClassification.from_pretrained("bert-base-uncased", num_labels=4)
-        self.tokenizer = BertTokenizer.from_pretrained("bert-base-uncased", do_lower_case=True)
+        self.model = BertForSequenceClassification.from_pretrained(pt_model, num_labels=4)
+        self.tokenizer = BertTokenizer.from_pretrained(pt_model, do_lower_case=True)
 
         # basic hyperparams
         self.hparams = hparams
