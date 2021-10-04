@@ -31,6 +31,7 @@ def run_classifier(model, test_set, input_col="complex", max_samples=None, devic
                         input_ids,
                         token_type_ids=token_type_ids,
                         attention_mask=attention_mask,
+                        return_dict=True,
                         )
             loss, logits = extract_results(output)
             preds += logits
