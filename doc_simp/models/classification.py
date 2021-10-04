@@ -59,7 +59,7 @@ class LightningBert(pl.LightningModule):
         if pt_model == "bert-base-uncased":
             self.model = BertForSequenceClassification.from_pretrained(pt_model, num_labels=4)
             self.tokenizer = BertTokenizer.from_pretrained(pt_model, do_lower_case=True)
-        elif pt_model = "roberta-base":
+        elif pt_model == "roberta-base":
             self.model = RobertaForSequenceClassification.from_pretrained(pt_model, num_labels=4)
             self.tokenizer = RobertaTokenizer.from_pretrained(pt_model)
 
