@@ -109,7 +109,7 @@ class LightningBert(pl.LightningModule):
     def validation_step(self, batch, batch_idx):
         if len(batch) == 3:
             if self.pt_model == "roberta-base":
-                input_ids, attention_mask = batch
+                input_ids, attention_mask, labels = batch
             else:
                 input_ids, attention_mask, token_type_ids = batch
             labels = None
