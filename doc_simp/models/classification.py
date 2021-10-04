@@ -82,7 +82,8 @@ class LightningBert(pl.LightningModule):
             output = self.model(
                 input_ids,
                 attention_mask=attention_mask,
-                labels=labels
+                labels=labels,
+                return_dict=True
                 )
         else:
             input_ids, attention_mask, token_type_ids, labels = batch
@@ -120,7 +121,8 @@ class LightningBert(pl.LightningModule):
             output = self.model(
                     input_ids,
                     attention_mask=attention_mask,
-                    labels=labels
+                    labels=labels,
+                    return_dict=True
                     )
         else:
             output = self.model(
