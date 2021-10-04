@@ -113,7 +113,7 @@ class LightningBert(pl.LightningModule):
                 input_ids, attention_mask, labels = batch
             else:
                 input_ids, attention_mask, token_type_ids = batch
-            labels = None
+                labels = None
         else:
             input_ids, attention_mask, token_type_ids, labels = batch
 
