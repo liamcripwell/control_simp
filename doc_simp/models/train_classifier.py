@@ -26,7 +26,7 @@ if __name__ == '__main__':
         else:
             model = LightningBert(hparams=args)
     else:
-        model = LightningBert.load_from_checkpoint(args.checkpoint, hparams=args)
+        model = LightningBert.load_from_checkpoint(args.checkpoint, hparams=args, pt_model=args.pt_model)
     dm = BertDataModule(model.tokenizer, hparams=args)
 
     if args.name is None:
