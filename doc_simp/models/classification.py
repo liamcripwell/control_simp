@@ -53,9 +53,11 @@ def extract_results(output):
 
 class LightningBert(pl.LightningModule):
 
-    def __init__(self, hparams, model_type="bert", pt_model="bert-base-uncased"):
+    def __init__(self, hparams, model_type="bert", pt_model=None):
         super().__init__()
 
+        if pt_model is None:
+            pt_model = "roberta-base" if model_type == "roberta" else "bert-base-uncased"
         self.model_type = model_type
         self.pt_model = pt_model
 
