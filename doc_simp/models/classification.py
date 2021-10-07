@@ -11,29 +11,29 @@ from transformers import BertTokenizer, AdamW, BertForSequenceClassification, Ro
 from doc_simp.models.utils import flatten_list
 
 
-def run_classifier(model, test_set, input_col="complex", max_samples=None, device="cuda"):
+def run_classifier(model, test_set, input_col="complex", max_samples=None, device="cuda", batch_size=16):
     if max_samples is not None:
         test_set = test_set[:max_samples]
 
     with torch.no_grad():
+        # preprocess data
         dm = BertDataModule(model.tokenizer, hparams=model.hparams)
         test = dm.preprocess(list(test_set[input_col]))
-        dataset = TensorDataset(
-                test['input_ids'].to(device),
-                test['attention_mask'].to(device),
-                test['token_type_ids'].to(device))
-        test_data = DataLoader(dataset, batch_size=16)
 
+        # prepare data loader
+        features = ["input_ids", "attention_mask"]
+        if model.model_type == "bert":
+            features.append("token_type_ids")
+        dataset = TensorDataset(*[test[f].to(device) for f in features])
+        test_data = DataLoader(dataset, batch_size=batch_size)
+
+        # run predictions for each batch
         preds = []
         for batch in test_data:
-            input_ids, attention_mask, token_type_ids = batch
-            output = model.model(
-                        input_ids,
-                        token_type_ids=token_type_ids,
-                        attention_mask=attention_mask,
-                        return_dict=True,
-                        )
-            loss, logits = extract_results(output)
+            batch = {features[i]:batch[i] for i in len(features)}
+            output = model.model()
+            output = model.model(*batch, return_dict=True)
+            _, logits = extract_results(output)
             preds += logits
     
     return preds
@@ -53,17 +53,20 @@ def extract_results(output):
 
 class LightningBert(pl.LightningModule):
 
-    def __init__(self, hparams, pt_model="bert-base-uncased"):
+    def __init__(self, hparams, model_type="bert", pt_model="bert-base-uncased"):
         super().__init__()
 
+        self.model_type = model_type
         self.pt_model = pt_model
 
-        if pt_model == "bert-base-uncased":
+        if model_type == "bert":
             self.model = BertForSequenceClassification.from_pretrained(pt_model, num_labels=4)
             self.tokenizer = BertTokenizer.from_pretrained(pt_model, do_lower_case=True)
-        elif pt_model == "roberta-base":
+        elif model_type == "roberta":
             self.model = RobertaForSequenceClassification.from_pretrained(pt_model, num_labels=4)
             self.tokenizer = RobertaTokenizer.from_pretrained(pt_model)
+        else:
+            raise ValueError("Unknown model type specified. Please choose one of [`bert`, `roberta`].")
 
         # basic hyperparams
         self.hparams = hparams
