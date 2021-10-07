@@ -30,7 +30,7 @@ def run_classifier(model, test_set, input_col="complex", max_samples=None, devic
         # run predictions for each batch
         preds = []
         for batch in test_data:
-            batch = {features[i]:batch[i] for i in len(features)}
+            batch = {features[i]:batch[i] for i in range(len(features))}
             output = model.model()
             output = model.model(*batch, return_dict=True)
             _, logits = extract_results(output)
