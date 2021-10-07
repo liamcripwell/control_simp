@@ -146,17 +146,14 @@ class LightningBert(pl.LightningModule):
 
     def validation_epoch_end(self, outputs, prefix="val"):
         loss = torch.stack([x["loss"] for x in outputs]).mean()
-        preds = flatten_list([x["preds"] for x in outputs])
-
-        # wandb log
-        self.logger.experiment.log({
-            f"{prefix}_loss": loss,
-        })
-
-        return {
-            "preds": preds,
+        result = {
             f"{prefix}_loss": loss,
         }
+
+        # wandb log
+        self.logger.experiment.log(result)
+
+        return result
 
 
     def configure_optimizers(self):
