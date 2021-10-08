@@ -8,8 +8,6 @@ import pytorch_lightning as pl
 from torch.utils.data import DataLoader, TensorDataset
 from transformers import BertTokenizer, AdamW, BertForSequenceClassification, RobertaTokenizer, RobertaForSequenceClassification
 
-from doc_simp.models.utils import flatten_list
-
 
 def run_classifier(model, test_set, input_col="complex", max_samples=None, device="cuda", batch_size=16):
     if max_samples is not None:
@@ -52,19 +50,21 @@ def extract_results(output):
 
 class LightningBert(pl.LightningModule):
 
-    def __init__(self, hparams, model_type="bert", pt_model=None):
+    def __init__(self, hparams, model_type="bert", pt_model=None, num_labels=4):
         super().__init__()
 
+        # resolve model type and pretrained base
         if pt_model is None:
             pt_model = "roberta-base" if model_type == "roberta" else "bert-base-uncased"
         self.model_type = model_type
         self.pt_model = pt_model
 
+        # set up model
         if model_type == "bert":
-            self.model = BertForSequenceClassification.from_pretrained(pt_model, num_labels=4)
+            self.model = BertForSequenceClassification.from_pretrained(pt_model, num_labels=num_labels)
             self.tokenizer = BertTokenizer.from_pretrained(pt_model, do_lower_case=True)
         elif model_type == "roberta":
-            self.model = RobertaForSequenceClassification.from_pretrained(pt_model, num_labels=4)
+            self.model = RobertaForSequenceClassification.from_pretrained(pt_model, num_labels=num_labels)
             self.tokenizer = RobertaTokenizer.from_pretrained(pt_model)
         else:
             raise ValueError("Unknown model type specified. Please choose one of [`bert`, `roberta`].")
@@ -282,7 +282,7 @@ class BertDataModule(pl.LightningDataModule):
                 self.train['attention_mask'],
                 self.train['token_type_ids'],
                 self.train['labels'])
-        train_data = DataLoader(dataset, batch_size=self.batch_size, shuffle=True, num_workers=1, pin_memory=True)
+        train_data = DataLoader(dataset, batch_size=self.batch_size, shuffle=True, num_workers=4, pin_memory=True)
         return train_data
 
     def val_dataloader(self):
