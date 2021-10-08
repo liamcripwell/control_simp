@@ -8,6 +8,11 @@ import pytorch_lightning as pl
 from torch.utils.data import DataLoader, TensorDataset
 from transformers import BertTokenizer, AdamW, BertForSequenceClassification, RobertaTokenizer, RobertaForSequenceClassification
 
+INPUTS = {
+    "roberta": ["input_ids", "attention_mask", "labels"],
+    "bert": ["input_ids", "attention_mask", "token_type_ids", "labels"]
+}
+
 
 def run_classifier(model, test_set, input_col="complex", max_samples=None, device="cuda", batch_size=16):
     if max_samples is not None:
@@ -19,9 +24,7 @@ def run_classifier(model, test_set, input_col="complex", max_samples=None, devic
         test = dm.preprocess(list(test_set[input_col]))
 
         # prepare data loader
-        features = ["input_ids", "attention_mask"]
-        if model.model_type == "bert":
-            features.append("token_type_ids")
+        features = INPUTS[model.model_type][:-1] # ignore labels
         dataset = TensorDataset(*[test[f].to(device) for f in features])
         test_data = DataLoader(dataset, batch_size=batch_size)
 
@@ -80,25 +83,10 @@ class LightningBert(pl.LightningModule):
         return self.model(input_ids, **kwargs)
 
     def training_step(self, batch, batch_idx):
-        if self.pt_model == "roberta-base":
-            input_ids, attention_mask, labels = batch
+        _batch = {INPUTS[self.model_type][i] : batch[i] for i in range(len(batch))}
+        output = self.model(**_batch, return_dict=True)
 
-            output = self.model(
-                input_ids,
-                attention_mask=attention_mask,
-                labels=labels,
-                return_dict=True
-                )
-        else:
-            input_ids, attention_mask, token_type_ids, labels = batch
-
-            output = self.model(
-                    input_ids,
-                    token_type_ids=token_type_ids,
-                    attention_mask=attention_mask,
-                    labels=labels
-                    )
-        loss, _logits = extract_results(output)
+        loss, _ = extract_results(output)
 
         output = {"loss": loss}
 
@@ -112,29 +100,9 @@ class LightningBert(pl.LightningModule):
         return output
 
     def validation_step(self, batch, batch_idx):
-        if len(batch) == 3:
-            if self.pt_model == "roberta-base":
-                input_ids, attention_mask, labels = batch
-            else:
-                input_ids, attention_mask, token_type_ids = batch
-                labels = None
-        else:
-            input_ids, attention_mask, token_type_ids, labels = batch
-
-        if self.pt_model == "roberta-base":
-            output = self.model(
-                    input_ids,
-                    attention_mask=attention_mask,
-                    labels=labels,
-                    return_dict=True
-                    )
-        else:
-            output = self.model(
-                    input_ids,
-                    token_type_ids=token_type_ids,
-                    attention_mask=attention_mask,
-                    labels=labels
-                    )
+        _batch = {INPUTS[self.model_type][i] : batch[i] for i in range(len(batch))}
+        output = self.model(**_batch, return_dict=True)
+        
         loss, logits = extract_results(output)
 
         output = {
