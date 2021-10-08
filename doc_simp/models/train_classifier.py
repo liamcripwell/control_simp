@@ -21,12 +21,12 @@ if __name__ == '__main__':
 
     # prepare data module and trainer class
     if args.checkpoint is None:
-        if args.pt_model is not None:
-            model = LightningBert(hparams=args, pt_model=args.pt_model)
+        if args.model_type is not None:
+            model = LightningBert(hparams=args, model_type=args.model_type)
         else:
             model = LightningBert(hparams=args)
     else:
-        model = LightningBert.load_from_checkpoint(args.checkpoint, hparams=args, pt_model=args.pt_model)
+        model = LightningBert.load_from_checkpoint(args.checkpoint, hparams=args, model_type=args.model_type)
     dm = BertDataModule(model.tokenizer, hparams=args)
 
     if args.name is None:

@@ -232,7 +232,7 @@ class BertDataModule(pl.LightningDataModule):
             self.val_split = min(self.hparams.val_split, 1 - self.train_split)
             self.val_file = self.hparams.val_file
 
-            self.pt_model = self.hparams.pt_model
+            self.model_type = self.hparams.model_type
 
     def prepare_data(self):
         # NOTE: shouldn't assign state in here
@@ -271,7 +271,7 @@ class BertDataModule(pl.LightningDataModule):
                 self.test[self.y_col]))
 
     def train_dataloader(self):
-        if self.pt_model == "roberta-base":
+        if self.model_type == "roberta":
             dataset = TensorDataset(
                 self.train['input_ids'],
                 self.train['attention_mask'],
@@ -286,7 +286,7 @@ class BertDataModule(pl.LightningDataModule):
         return train_data
 
     def val_dataloader(self):
-        if self.pt_model == "roberta-base":
+        if self.model_type == "roberta":
             dataset = TensorDataset(
                 self.train['input_ids'],
                 self.train['attention_mask'],
@@ -301,7 +301,7 @@ class BertDataModule(pl.LightningDataModule):
         return val_data
 
     def test_dataloader(self):
-        if self.pt_model == "roberta-base":
+        if self.model_type == "roberta":
             dataset = TensorDataset(
                 self.train['input_ids'],
                 self.train['attention_mask'],
@@ -325,7 +325,7 @@ class BertDataModule(pl.LightningDataModule):
             "input_ids": torch.tensor(input_ids),
             "attention_mask": torch.tensor(attention_mask),
         }
-        if self.pt_model != "roberta-base":
+        if self.model_type != "roberta":
             token_type_ids = padded_sequences["token_type_ids"]
             data["token_type_ids"] = torch.tensor(token_type_ids)
 
