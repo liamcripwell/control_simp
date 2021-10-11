@@ -33,9 +33,8 @@ if __name__ == '__main__':
     if args.name is None:
         args.name = f"{args.max_samples}_{args.batch_size}_{args.learning_rate}"
 
-    if args.wandb_id is not None:
-        wandb.restore(args.checkpoint)
-
+    # NOTE: use args.wandb_id to resume training on an existing wandb run.
+    # However, existing checkpoint files must be removed from the project's run folder to avoid errors.
     wandb_logger = WandbLogger(
         name=args.name, project=args.project, save_dir=args.save_dir, id=args.wandb_id)
 
