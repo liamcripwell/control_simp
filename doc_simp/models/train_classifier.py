@@ -1,5 +1,6 @@
 import argparse
 
+import wandb
 import pytorch_lightning as pl
 from pytorch_lightning.loggers import WandbLogger
 
@@ -32,8 +33,10 @@ if __name__ == '__main__':
     if args.name is None:
         args.name = f"{args.max_samples}_{args.batch_size}_{args.learning_rate}"
 
+    # NOTE: use args.wandb_id to resume training on an existing wandb run.
+    # However, existing checkpoint files must be removed from the project's run folder to avoid errors.
     wandb_logger = WandbLogger(
-        name=args.name, project=args.project, save_dir=args.save_dir)
+        name=args.name, project=args.project, save_dir=args.save_dir, id=args.wandb_id)
 
     trainer = pl.Trainer.from_argparse_args(
         args,

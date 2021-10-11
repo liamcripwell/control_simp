@@ -161,6 +161,7 @@ class LightningBert(pl.LightningModule):
         parser.add_argument("--save_dir", type=str, default=None, required=False,)
         parser.add_argument("--project", type=str, default=None, required=False,)
         parser.add_argument("--checkpoint", type=str, default=None, required=False,)
+        parser.add_argument("--wandb_id", type=str, default=None, required=False,)
         parser.add_argument("--model_type", type=str, default="roberta", required=False,)
         parser.add_argument("--x_col", type=str, default="x", required=False,)
         parser.add_argument("--y_col", type=str, default="y", required=False,)
@@ -174,7 +175,7 @@ class LightningBert(pl.LightningModule):
         parser.add_argument("--data_file2", type=str, default=None, required=False)
         parser.add_argument("--max_samples", type=int, default=-1)
         parser.add_argument("--train_split", type=float, default=0.9)
-        parser.add_argument("--val_split", type=float, default=0.1)
+        parser.add_argument("--val_split", type=float, default=0.05)
         parser.add_argument("--val_file", type=str, default=None, required=False)
 
         return parser
@@ -196,7 +197,7 @@ class BertDataModule(pl.LightningDataModule):
             self.data_file = self.hparams.data_file
             self.batch_size = self.hparams.batch_size
             self.max_samples = self.hparams.max_samples  # defaults to no restriction
-            self.train_split = self.hparams.train_split  # default split will be 90/10/0
+            self.train_split = self.hparams.train_split  # default split will be 90/5/5
             self.val_split = min(self.hparams.val_split, 1 - self.train_split)
             self.val_file = self.hparams.val_file
 
@@ -208,7 +209,8 @@ class BertDataModule(pl.LightningDataModule):
 
     def setup(self, stage):
         self.data = pd.read_csv(self.data_file)
-        self.data = self.data.sample(frac=1)[:min(self.max_samples, len(self.data))] # NOTE: this will actually exclude the last item
+        self.data = self.data[:min(self.max_samples, len(self.data))]
+        # self.data = self.data.sample(frac=1)[:min(self.max_samples, len(self.data))] # NOTE: this will actually exclude the last item
         if self.val_file is not None:
             print("Loading specific validation samples...")
             self.validate = pd.read_csv(self.val_file)
@@ -256,30 +258,30 @@ class BertDataModule(pl.LightningDataModule):
     def val_dataloader(self):
         if self.model_type == "roberta":
             dataset = TensorDataset(
-                self.train['input_ids'],
-                self.train['attention_mask'],
-                self.train['labels'])
+                self.validate['input_ids'],
+                self.validate['attention_mask'],
+                self.validate['labels'])
         else:
             dataset = TensorDataset(
-                self.train['input_ids'],
-                self.train['attention_mask'],
-                self.train['token_type_ids'],
-                self.train['labels'])
+                self.validate['input_ids'],
+                self.validate['attention_mask'],
+                self.validate['token_type_ids'],
+                self.validate['labels'])
         val_data = DataLoader(dataset, batch_size=self.batch_size, num_workers=1, pin_memory=True)
         return val_data
 
     def test_dataloader(self):
         if self.model_type == "roberta":
             dataset = TensorDataset(
-                self.train['input_ids'],
-                self.train['attention_mask'],
-                self.train['labels'])
+                self.test['input_ids'],
+                self.test['attention_mask'],
+                self.test['labels'])
         else:
             dataset = TensorDataset(
-                self.train['input_ids'],
-                self.train['attention_mask'],
-                self.train['token_type_ids'],
-                self.train['labels'])
+                self.test['input_ids'],
+                self.test['attention_mask'],
+                self.test['token_type_ids'],
+                self.test['labels'])
         test_data = DataLoader(dataset, batch_size=self.batch_size, num_workers=1, pin_memory=True)
         return test_data
 
