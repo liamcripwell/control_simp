@@ -2,6 +2,7 @@ import math
 import argparse
 
 import torch
+import wandb
 import numpy as np
 import pandas as pd
 import pytorch_lightning as pl
@@ -121,6 +122,10 @@ class LightningBert(pl.LightningModule):
         # wandb log
         self.logger.experiment.log(result)
 
+        if self.hparams.wandb_save is not None:
+            self.trainer.save_checkpoint(self.hparams.name + ".ckpt")
+            wandb.save(self.hparams.name + ".ckpt")
+
         return result
 
 
@@ -161,7 +166,8 @@ class LightningBert(pl.LightningModule):
         parser.add_argument("--save_dir", type=str, default=None, required=False,)
         parser.add_argument("--project", type=str, default=None, required=False,)
         parser.add_argument("--checkpoint", type=str, default=None, required=False,)
-        parser.add_argument("--wandb_id", type=str, default=None, required=False,)
+        parser.add_argument("--wandb_save", type=str, default=None, required=False,)
+        parser.add_argument("--wandb_load", action="store_true")
         parser.add_argument("--model_type", type=str, default="roberta", required=False,)
         parser.add_argument("--x_col", type=str, default="x", required=False,)
         parser.add_argument("--y_col", type=str, default="y", required=False,)
