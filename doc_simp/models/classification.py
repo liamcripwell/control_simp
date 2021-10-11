@@ -8,32 +8,32 @@ import pytorch_lightning as pl
 from torch.utils.data import DataLoader, TensorDataset
 from transformers import BertTokenizer, AdamW, BertForSequenceClassification, RobertaTokenizer, RobertaForSequenceClassification
 
-from doc_simp.models.utils import flatten_list
+INPUTS = {
+    "roberta": ["input_ids", "attention_mask", "labels"],
+    "bert": ["input_ids", "attention_mask", "token_type_ids", "labels"]
+}
 
 
-def run_classifier(model, test_set, input_col="complex", max_samples=None, device="cuda"):
+def run_classifier(model, test_set, input_col="complex", max_samples=None, device="cuda", batch_size=16):
     if max_samples is not None:
         test_set = test_set[:max_samples]
 
     with torch.no_grad():
+        # preprocess data
         dm = BertDataModule(model.tokenizer, hparams=model.hparams)
         test = dm.preprocess(list(test_set[input_col]))
-        dataset = TensorDataset(
-                test['input_ids'].to(device),
-                test['attention_mask'].to(device),
-                test['token_type_ids'].to(device))
-        test_data = DataLoader(dataset, batch_size=16)
 
+        # prepare data loader
+        features = INPUTS[model.model_type][:-1] # ignore labels
+        dataset = TensorDataset(*[test[f].to(device) for f in features])
+        test_data = DataLoader(dataset, batch_size=batch_size)
+
+        # run predictions for each batch
         preds = []
         for batch in test_data:
-            input_ids, attention_mask, token_type_ids = batch
-            output = model.model(
-                        input_ids,
-                        token_type_ids=token_type_ids,
-                        attention_mask=attention_mask,
-                        return_dict=True,
-                        )
-            loss, logits = extract_results(output)
+            _batch = {features[i]:batch[i] for i in range(len(features))}
+            output = model.model(**_batch, return_dict=True)
+            _, logits = extract_results(output)
             preds += logits
     
     return preds
@@ -53,15 +53,24 @@ def extract_results(output):
 
 class LightningBert(pl.LightningModule):
 
-    def __init__(self, hparams, pt_model="bert-base-uncased"):
+    def __init__(self, hparams, model_type="bert", pt_model=None, num_labels=4):
         super().__init__()
 
-        if pt_model == "bert-base-uncased":
-            self.model = BertForSequenceClassification.from_pretrained(pt_model, num_labels=4)
+        # resolve model type and pretrained base
+        if pt_model is None:
+            pt_model = "roberta-base" if model_type == "roberta" else "bert-base-uncased"
+        self.model_type = model_type
+        self.pt_model = pt_model
+
+        # set up model
+        if model_type == "bert":
+            self.model = BertForSequenceClassification.from_pretrained(pt_model, num_labels=num_labels)
             self.tokenizer = BertTokenizer.from_pretrained(pt_model, do_lower_case=True)
-        elif pt_model == "roberta-base":
-            self.model = RobertaForSequenceClassification.from_pretrained(pt_model, num_labels=4)
+        elif model_type == "roberta":
+            self.model = RobertaForSequenceClassification.from_pretrained(pt_model, num_labels=num_labels)
             self.tokenizer = RobertaTokenizer.from_pretrained(pt_model)
+        else:
+            raise ValueError("Unknown model type specified. Please choose one of [`bert`, `roberta`].")
 
         # basic hyperparams
         self.hparams = hparams
@@ -74,15 +83,10 @@ class LightningBert(pl.LightningModule):
         return self.model(input_ids, **kwargs)
 
     def training_step(self, batch, batch_idx):
-        input_ids, attention_mask, token_type_ids, labels = batch
+        _batch = {INPUTS[self.model_type][i] : batch[i] for i in range(len(batch))}
+        output = self.model(**_batch, return_dict=True)
 
-        output = self.model(
-                input_ids,
-                token_type_ids=token_type_ids,
-                attention_mask=attention_mask,
-                labels=labels
-                )
-        loss, _logits = extract_results(output)
+        loss, _ = extract_results(output)
 
         output = {"loss": loss}
 
@@ -96,18 +100,9 @@ class LightningBert(pl.LightningModule):
         return output
 
     def validation_step(self, batch, batch_idx):
-        if len(batch) == 3:
-            input_ids, attention_mask, token_type_ids = batch
-            labels = None
-        else:
-            input_ids, attention_mask, token_type_ids, labels = batch
+        _batch = {INPUTS[self.model_type][i] : batch[i] for i in range(len(batch))}
+        output = self.model(**_batch, return_dict=True)
 
-        output = self.model(
-                input_ids,
-                token_type_ids=token_type_ids,
-                attention_mask=attention_mask,
-                labels=labels
-                )
         loss, logits = extract_results(output)
 
         output = {
@@ -119,17 +114,14 @@ class LightningBert(pl.LightningModule):
 
     def validation_epoch_end(self, outputs, prefix="val"):
         loss = torch.stack([x["loss"] for x in outputs]).mean()
-        preds = flatten_list([x["preds"] for x in outputs])
-
-        # wandb log
-        self.logger.experiment.log({
-            f"{prefix}_loss": loss,
-        })
-
-        return {
-            "preds": preds,
+        result = {
             f"{prefix}_loss": loss,
         }
+
+        # wandb log
+        self.logger.experiment.log(result)
+
+        return result
 
 
     def configure_optimizers(self):
@@ -169,7 +161,7 @@ class LightningBert(pl.LightningModule):
         parser.add_argument("--save_dir", type=str, default=None, required=False,)
         parser.add_argument("--project", type=str, default=None, required=False,)
         parser.add_argument("--checkpoint", type=str, default=None, required=False,)
-        parser.add_argument("--pt_model", type=str, default=None, required=False,)
+        parser.add_argument("--model_type", type=str, default="bert", required=False,)
         parser.add_argument("--x_col", type=str, default="x", required=False,)
         parser.add_argument("--y_col", type=str, default="y", required=False,)
         parser.add_argument("--train_check_interval", type=float, default=0.20)
@@ -208,6 +200,8 @@ class BertDataModule(pl.LightningDataModule):
             self.val_split = min(self.hparams.val_split, 1 - self.train_split)
             self.val_file = self.hparams.val_file
 
+            self.model_type = self.hparams.model_type
+
     def prepare_data(self):
         # NOTE: shouldn't assign state in here
         pass
@@ -245,30 +239,48 @@ class BertDataModule(pl.LightningDataModule):
                 self.test[self.y_col]))
 
     def train_dataloader(self):
-        dataset = TensorDataset(
-            self.train['input_ids'],
-            self.train['attention_mask'],
-            self.train['token_type_ids'],
-            self.train['labels'])
-        train_data = DataLoader(dataset, batch_size=self.batch_size, shuffle=True, num_workers=8, pin_memory=True)
+        if self.model_type == "roberta":
+            dataset = TensorDataset(
+                self.train['input_ids'],
+                self.train['attention_mask'],
+                self.train['labels'])
+        else:
+            dataset = TensorDataset(
+                self.train['input_ids'],
+                self.train['attention_mask'],
+                self.train['token_type_ids'],
+                self.train['labels'])
+        train_data = DataLoader(dataset, batch_size=self.batch_size, shuffle=True, num_workers=4, pin_memory=True)
         return train_data
 
     def val_dataloader(self):
-        dataset = TensorDataset(
-            self.validate['input_ids'],
-            self.validate['attention_mask'],
-            self.validate['token_type_ids'],
-            self.validate['labels'])
-        val_data = DataLoader(dataset, batch_size=self.batch_size, num_workers=8, pin_memory=True)
+        if self.model_type == "roberta":
+            dataset = TensorDataset(
+                self.train['input_ids'],
+                self.train['attention_mask'],
+                self.train['labels'])
+        else:
+            dataset = TensorDataset(
+                self.train['input_ids'],
+                self.train['attention_mask'],
+                self.train['token_type_ids'],
+                self.train['labels'])
+        val_data = DataLoader(dataset, batch_size=self.batch_size, num_workers=1, pin_memory=True)
         return val_data
 
     def test_dataloader(self):
-        dataset = TensorDataset(
-            self.test['input_ids'],
-            self.test['attention_mask'],
-            self.test['token_type_ids'],
-            self.test['labels'])
-        test_data = DataLoader(dataset, batch_size=self.batch_size, num_workers=8, pin_memory=True)
+        if self.model_type == "roberta":
+            dataset = TensorDataset(
+                self.train['input_ids'],
+                self.train['attention_mask'],
+                self.train['labels'])
+        else:
+            dataset = TensorDataset(
+                self.train['input_ids'],
+                self.train['attention_mask'],
+                self.train['token_type_ids'],
+                self.train['labels'])
+        test_data = DataLoader(dataset, batch_size=self.batch_size, num_workers=1, pin_memory=True)
         return test_data
 
     def preprocess(self, seqs, labels=None):
@@ -276,13 +288,15 @@ class BertDataModule(pl.LightningDataModule):
         padded_sequences = self.tokenizer(seqs, padding=True, truncation=True)
         input_ids = padded_sequences["input_ids"]
         attention_mask = padded_sequences["attention_mask"]
-        token_type_ids = padded_sequences["token_type_ids"]
 
         data = {
             "input_ids": torch.tensor(input_ids),
             "attention_mask": torch.tensor(attention_mask),
-            "token_type_ids": torch.tensor(token_type_ids),
         }
+        if self.model_type != "roberta":
+            token_type_ids = padded_sequences["token_type_ids"]
+            data["token_type_ids"] = torch.tensor(token_type_ids)
+
         if labels is not None:
             data["labels"] = torch.tensor(labels)
 
