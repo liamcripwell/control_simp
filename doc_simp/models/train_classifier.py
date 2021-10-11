@@ -33,7 +33,7 @@ if __name__ == '__main__':
         args.name = f"{args.max_samples}_{args.batch_size}_{args.learning_rate}"
 
     wandb_logger = WandbLogger(
-        name=args.name, project=args.project, save_dir=args.save_dir)
+        name=args.name, project=args.project, save_dir=args.save_dir, id=args.wandb_id)
 
     trainer = pl.Trainer.from_argparse_args(
         args,
