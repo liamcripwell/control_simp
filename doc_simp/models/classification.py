@@ -53,7 +53,7 @@ def extract_results(output):
 
 class LightningBert(pl.LightningModule):
 
-    def __init__(self, hparams, model_type="bert", pt_model=None, num_labels=4):
+    def __init__(self, hparams, model_type="roberta", pt_model=None, num_labels=4):
         super().__init__()
 
         # resolve model type and pretrained base
@@ -161,7 +161,7 @@ class LightningBert(pl.LightningModule):
         parser.add_argument("--save_dir", type=str, default=None, required=False,)
         parser.add_argument("--project", type=str, default=None, required=False,)
         parser.add_argument("--checkpoint", type=str, default=None, required=False,)
-        parser.add_argument("--model_type", type=str, default="bert", required=False,)
+        parser.add_argument("--model_type", type=str, default="roberta", required=False,)
         parser.add_argument("--x_col", type=str, default="x", required=False,)
         parser.add_argument("--y_col", type=str, default="y", required=False,)
         parser.add_argument("--train_check_interval", type=float, default=0.20)
