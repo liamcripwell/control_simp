@@ -257,30 +257,30 @@ class BertDataModule(pl.LightningDataModule):
     def val_dataloader(self):
         if self.model_type == "roberta":
             dataset = TensorDataset(
-                self.train['input_ids'],
-                self.train['attention_mask'],
-                self.train['labels'])
+                self.validate['input_ids'],
+                self.validate['attention_mask'],
+                self.validate['labels'])
         else:
             dataset = TensorDataset(
-                self.train['input_ids'],
-                self.train['attention_mask'],
-                self.train['token_type_ids'],
-                self.train['labels'])
+                self.validate['input_ids'],
+                self.validate['attention_mask'],
+                self.validate['token_type_ids'],
+                self.validate['labels'])
         val_data = DataLoader(dataset, batch_size=self.batch_size, num_workers=1, pin_memory=True)
         return val_data
 
     def test_dataloader(self):
         if self.model_type == "roberta":
             dataset = TensorDataset(
-                self.train['input_ids'],
-                self.train['attention_mask'],
-                self.train['labels'])
+                self.test['input_ids'],
+                self.test['attention_mask'],
+                self.test['labels'])
         else:
             dataset = TensorDataset(
-                self.train['input_ids'],
-                self.train['attention_mask'],
-                self.train['token_type_ids'],
-                self.train['labels'])
+                self.test['input_ids'],
+                self.test['attention_mask'],
+                self.test['token_type_ids'],
+                self.test['labels'])
         test_data = DataLoader(dataset, batch_size=self.batch_size, num_workers=1, pin_memory=True)
         return test_data
 
