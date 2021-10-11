@@ -175,7 +175,7 @@ class LightningBert(pl.LightningModule):
         parser.add_argument("--data_file2", type=str, default=None, required=False)
         parser.add_argument("--max_samples", type=int, default=-1)
         parser.add_argument("--train_split", type=float, default=0.9)
-        parser.add_argument("--val_split", type=float, default=0.1)
+        parser.add_argument("--val_split", type=float, default=0.05)
         parser.add_argument("--val_file", type=str, default=None, required=False)
 
         return parser
@@ -197,7 +197,7 @@ class BertDataModule(pl.LightningDataModule):
             self.data_file = self.hparams.data_file
             self.batch_size = self.hparams.batch_size
             self.max_samples = self.hparams.max_samples  # defaults to no restriction
-            self.train_split = self.hparams.train_split  # default split will be 90/10/0
+            self.train_split = self.hparams.train_split  # default split will be 90/5/5
             self.val_split = min(self.hparams.val_split, 1 - self.train_split)
             self.val_file = self.hparams.val_file
 
