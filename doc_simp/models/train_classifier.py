@@ -28,16 +28,16 @@ if __name__ == '__main__':
             model = LightningBert(hparams=args)
     else:
         model = LightningBert.load_from_checkpoint(args.checkpoint, hparams=args, model_type=args.model_type)
-        if args.wandb_load:
-            wandb.restore(args.checkpoint)
-
     dm = BertDataModule(model.tokenizer, hparams=args)
 
     if args.name is None:
         args.name = f"{args.max_samples}_{args.batch_size}_{args.learning_rate}"
 
+    if args.wandb_id is not None:
+        wandb.restore(args.checkpoint)
+
     wandb_logger = WandbLogger(
-        name=args.name, project=args.project, save_dir=args.save_dir)
+        name=args.name, project=args.project, save_dir=args.save_dir, id=args.wandb_id)
 
     trainer = pl.Trainer.from_argparse_args(
         args,
