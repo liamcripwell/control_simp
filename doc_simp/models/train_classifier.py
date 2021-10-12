@@ -1,9 +1,9 @@
 import argparse
 
-import wandb
 import pytorch_lightning as pl
 from pytorch_lightning.loggers import WandbLogger
 
+from doc_simp.models.wandb_util import existing_checkpoints
 from doc_simp.models.classification import LightningBert, BertDataModule
 
 if __name__ == '__main__':
@@ -22,19 +22,21 @@ if __name__ == '__main__':
 
     # prepare data module and trainer class
     if args.checkpoint is None:
-        if args.model_type is not None:
-            model = LightningBert(hparams=args, model_type=args.model_type)
-        else:
-            model = LightningBert(hparams=args)
+        model = LightningBert(hparams=args, model_type=args.model_type)
     else:
         model = LightningBert.load_from_checkpoint(args.checkpoint, hparams=args, model_type=args.model_type)
     dm = BertDataModule(model.tokenizer, hparams=args)
 
+    # construct default run name
     if args.name is None:
         args.name = f"{args.max_samples}_{args.batch_size}_{args.learning_rate}"
 
     # NOTE: use args.wandb_id to resume training on an existing wandb run.
     # However, existing checkpoint files must be removed from the project's run folder to avoid errors.
+    if args.wandb_id is not None and existing_checkpoints(args):
+        raise FileExistsError(
+            "The specified wandb run already has local checkpoints. Please remove them before continuing.")
+
     wandb_logger = WandbLogger(
         name=args.name, project=args.project, save_dir=args.save_dir, id=args.wandb_id)
 
