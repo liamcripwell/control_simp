@@ -1,3 +1,5 @@
+import os
+import glob
 import argparse
 
 import wandb
@@ -35,6 +37,15 @@ if __name__ == '__main__':
 
     # NOTE: use args.wandb_id to resume training on an existing wandb run.
     # However, existing checkpoint files must be removed from the project's run folder to avoid errors.
+    if args.wandb_id is not None:
+        base = "" if args.save_dir is None else args.save_dir
+        proj_dir = os.path.join(base, args.project, args.wandb_id)
+        if os.path.isdir(proj_dir):
+            for file in os.listdir(proj_dir):
+                if file.endswith(".ckpt"):
+                    raise FileExistsError(
+                        "The specified wandb run already has local checkpoints. Please remove them before continuing.")
+
     wandb_logger = WandbLogger(
         name=args.name, project=args.project, save_dir=args.save_dir, id=args.wandb_id)
 
