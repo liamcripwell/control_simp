@@ -4,16 +4,16 @@ import pytorch_lightning as pl
 from pytorch_lightning.loggers import WandbLogger
 
 from doc_simp.models.wandb_util import existing_checkpoints
-from doc_simp.models.classification import LightningBert, BertDataModule
+from doc_simp.models.end_to_end import BartFinetuner, BartDataModule
 
 if __name__ == '__main__':
     """
-    Train a BERT-based simplification-operation classification model.
+    Train an end-to-end BART-based simplification model.
     """
 
     # prepare argument parser
     parser = argparse.ArgumentParser()
-    parser = LightningBert.add_model_specific_args(parser)
+    parser = BartFinetuner.add_model_specific_args(parser)
 
     # add all the available trainer options to argparse
     # ie: now --gpus --num_nodes ... --fast_dev_run all work in the cli
@@ -22,10 +22,10 @@ if __name__ == '__main__':
 
     # prepare data module and trainer class
     if args.checkpoint is None:
-        model = LightningBert(hparams=args, model_type=args.model_type)
+        model = BartFinetuner(hparams=args)
     else:
-        model = LightningBert.load_from_checkpoint(args.checkpoint, hparams=args, model_type=args.model_type)
-    dm = BertDataModule(model.tokenizer, hparams=args)
+        model = BartFinetuner.load_from_checkpoint(args.checkpoint, hparams=args)
+    dm = BartDataModule(model.tokenizer, hparams=args)
 
     # construct default run name
     if args.name is None:
@@ -36,7 +36,6 @@ if __name__ == '__main__':
     if args.wandb_id is not None and existing_checkpoints(args):
         raise FileExistsError(
             "The specified wandb run already has local checkpoints. Please remove them before continuing.")
-
     wandb_logger = WandbLogger(
         name=args.name, project=args.project, save_dir=args.save_dir, id=args.wandb_id)
 
