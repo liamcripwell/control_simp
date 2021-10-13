@@ -118,7 +118,7 @@ class BartFinetuner(pl.LightningModule):
         # all_metrics = {f"{prefix}_avg_{k}": x for k, x in losses.items()}
         
         # callback writes this to self.metrics_save_path
-        self.metrics[prefix].append(all_metrics)
+        # self.metrics[prefix].append(all_metrics)
 
         # wandb log
         self.logger.experiment.log({
