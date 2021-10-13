@@ -108,14 +108,14 @@ class BartFinetuner(pl.LightningModule):
         losses = {k: torch.stack([x[k] for x in outputs]).mean()
                   for k in self.loss_names}
         loss = losses["loss"]
-        generative_metrics = {k: np.array([x[k] for x in outputs]).mean() 
-                                for k in self.metric_names + ["gen_time", "gen_len"]}
-        metric_val = (generative_metrics[self.val_metric]
-                      if self.val_metric in generative_metrics else losses[self.val_metric])
-        metric_tensor: torch.FloatTensor = torch.tensor(metric_val).type_as(loss)
-        generative_metrics.update({k: v.item() for k, v in losses.items()})
-        losses.update(generative_metrics)
-        all_metrics = {f"{prefix}_avg_{k}": x for k, x in losses.items()}
+        # generative_metrics = {k: np.array([x[k] for x in outputs]).mean() 
+        #                         for k in self.metric_names + ["gen_time", "gen_len"]}
+        # metric_val = (generative_metrics[self.val_metric]
+        #               if self.val_metric in generative_metrics else losses[self.val_metric])
+        # metric_tensor: torch.FloatTensor = torch.tensor(metric_val).type_as(loss)
+        # generative_metrics.update({k: v.item() for k, v in losses.items()})
+        # losses.update(generative_metrics)
+        # all_metrics = {f"{prefix}_avg_{k}": x for k, x in losses.items()}
         
         # callback writes this to self.metrics_save_path
         self.metrics[prefix].append(all_metrics)
@@ -123,13 +123,13 @@ class BartFinetuner(pl.LightningModule):
         # wandb log
         self.logger.experiment.log({
             f"{prefix}_loss": loss,
-            f"{prefix}_{self.val_metric}": metric_tensor,
+            # f"{prefix}_{self.val_metric}": metric_tensor,
         })
 
         return {
             # "log": all_metrics,
             f"{prefix}_loss": loss,
-            f"{prefix}_{self.val_metric}": metric_tensor,
+            # f"{prefix}_{self.val_metric}": metric_tensor,
         }
 
     def test_step(self, batch, batch_idx):
