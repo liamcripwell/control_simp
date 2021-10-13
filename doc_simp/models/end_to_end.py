@@ -204,9 +204,10 @@ class BartFinetuner(pl.LightningModule):
             parents=[parent_parser], add_help=False)
 
         parser.add_argument("--name", type=str, default=None, required=False,)
-        parser.add_argument("--save_dir", type=str, default=None, required=False,)
         parser.add_argument("--project", type=str, default=None, required=False,)
+        parser.add_argument("--save_dir", type=str, default=None, required=False,)
         parser.add_argument("--checkpoint", type=str, default=None, required=False,)
+        parser.add_argument("--wandb_id", type=str, default=None, required=False,)
         parser.add_argument("--x_col", type=str, default="x", required=False,)
         parser.add_argument("--y_col", type=str, default="y", required=False,)
         parser.add_argument("--train_check_interval", type=float, default=0.20)
@@ -215,8 +216,10 @@ class BartFinetuner(pl.LightningModule):
         parser.add_argument("--learning_rate", type=float, default=2e-5)
         parser.add_argument("--batch_size", type=int, default=16)
         parser.add_argument("--data_file", type=str, default=None, required=True)
-        parser.add_argument("--train_split", type=float, default=0.8)
-        parser.add_argument("--max_samples", type=float)
+        parser.add_argument("--max_samples", type=int, default=-1)
+        parser.add_argument("--train_split", type=float, default=0.9)
+        parser.add_argument("--val_split", type=float, default=0.05)
+        parser.add_argument("--val_file", type=str, default=None, required=False)
         parser.add_argument("--max_source_length", type=int, default=128,
             help="The maximum total input sequence length after tokenization. Sequences longer "
             "than this will be truncated, sequences shorter will be padded.",)
@@ -241,13 +244,14 @@ class BartDataModule(pl.LightningDataModule):
         self.hparams = hparams
         self.x_col = self.hparams.x_col
         self.y_col = self.hparams.y_col
-        self.data_file = self.hparams.data_file
         self.batch_size = self.hparams.batch_size
+        self.data_file = self.hparams.data_file
+        self.max_samples = self.hparams.max_samples  # defaults to no restriction
+        self.val_file = self.hparams.val_file
+        self.train_split = self.hparams.train_split  # default split will be 90/5/5
+        self.val_split = min(self.hparams.val_split, 1-self.train_split)
         self.max_source_length = self.hparams.max_source_length
         self.max_target_length = self.hparams.max_target_length
-        self.max_samples = int(self.hparams.max_samples)  # defaults to no restriction
-        self.train_split = self.hparams.train_split  # default split will be 80/10/10
-        self.val_split = (1 - self.train_split) / 2
 
     def prepare_data(self):
         # NOTE: shouldn't assign state in here
@@ -256,14 +260,21 @@ class BartDataModule(pl.LightningDataModule):
     def setup(self, stage):
         # read and prepare input data
         self.data = pd.read_csv(self.data_file)
-        self.data = self.data.sample(frac=1)[:self.max_samples]
+        self.data = self.data.sample(frac=1)[:min(self.max_samples, len(self.data))] # NOTE: this will actually exclude the last item
+        if self.val_file is not None:
+            print("Loading specific validation samples...")
+            self.validate = pd.read_csv(self.val_file)
         print("All data loaded.")
 
         # train, validation, test split
-        train_size = int(self.train_split * len(self.data))
-        val_size = int((self.train_split + self.val_split) * len(self.data))
-        self.train, self.validate, self.test = np.split(
-            self.data, [train_size, val_size])
+        if self.val_file is None:
+            train_span = int(self.train_split * len(self.data))
+            val_span = int((self.train_split + self.val_split) * len(self.data))
+            self.train, self.validate, self.test = np.split(
+                self.data, [train_span, val_span])
+        else:
+            self.train = self.data
+            self.test = self.data[:12] # arbitrarily have 12 test samples as precaution
 
         # preprocess datasets
         self.train = self.preprocess(
@@ -281,30 +292,31 @@ class BartDataModule(pl.LightningDataModule):
             self.train['input_ids'],
             self.train['attention_mask'],
             self.train['labels'])
-        return DataLoader(dataset, batch_size=self.batch_size, shuffle=True)
+        return DataLoader(dataset, batch_size=self.batch_size, shuffle=True, 
+                            num_workers=4, pin_memory=True)
 
     def val_dataloader(self):
         dataset = TensorDataset(
             self.validate['input_ids'],
             self.validate['attention_mask'],
             self.validate['labels'])
-        return DataLoader(dataset, batch_size=self.batch_size)
+        return DataLoader(dataset, batch_size=self.batch_size, num_workers=1, pin_memory=True)
 
     def test_dataloader(self):
         dataset = TensorDataset(
             self.test['input_ids'],
             self.test['attention_mask'],
             self.test['labels'])
-        return DataLoader(dataset, batch_size=self.batch_size)
+        return DataLoader(dataset, batch_size=self.batch_size, num_workers=1, pin_memory=True)
 
     def preprocess(self, source_sequences, target_sequences, pad_to_max_length=True, return_tensors="pt"):
         """Transforms data into tokenized input/output sequences."""
         transformed_x = self.tokenizer(source_sequences, max_length=self.max_source_length,
-                        padding=pad_to_max_length, truncation=True, return_tensors=return_tensors, 
-                        add_prefix_space=True)
+                            padding=pad_to_max_length, truncation=True, 
+                            return_tensors=return_tensors, add_prefix_space=True)
         transformed_y = self.tokenizer(target_sequences, max_length=self.max_target_length,
-                        padding=pad_to_max_length, truncation=True, return_tensors=return_tensors,
-                        add_prefix_space=True)
+                            padding=pad_to_max_length, truncation=True, 
+                            return_tensors=return_tensors, add_prefix_space=True)
 
         return {
             "input_ids": transformed_x['input_ids'],
