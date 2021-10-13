@@ -215,7 +215,6 @@ class BartFinetuner(pl.LightningModule):
         parser.add_argument("--learning_rate", type=float, default=2e-5)
         parser.add_argument("--batch_size", type=int, default=16)
         parser.add_argument("--data_file", type=str, default=None, required=True)
-        parser.add_argument("--data_file2", type=str, default=None, required=False)
         parser.add_argument("--train_split", type=float, default=0.8)
         parser.add_argument("--max_samples", type=float)
         parser.add_argument("--max_source_length", type=int, default=128,
@@ -257,10 +256,6 @@ class BartDataModule(pl.LightningDataModule):
     def setup(self, stage):
         # read and prepare input data
         self.data = pd.read_csv(self.data_file)
-        if self.hparams.data_file2 is not None:
-            print("Loading second data file...")
-            data2 = pd.read_csv(self.hparams.data_file2)
-            self.data = pd.concat([self.data, data2], ignore_index=True)
         self.data = self.data.sample(frac=1)[:self.max_samples]
         print("All data loaded.")
 
@@ -270,73 +265,49 @@ class BartDataModule(pl.LightningDataModule):
         self.train, self.validate, self.test = np.split(
             self.data, [train_size, val_size])
 
-        # tokenize data sets
-        self.train = self.transform(
-            list(
-                self.train[self.x_col]), list(
-                self.train[self.y_col]))
-        self.validate = self.transform(
-            list(
-                self.validate[self.x_col]), list(
-                self.validate[self.y_col]))
-        self.test = self.transform(list(self.test[self.x_col]), list(self.test[self.y_col]))
+        # preprocess datasets
+        self.train = self.preprocess(
+            list(self.train[self.x_col]), 
+            list(self.train[self.y_col]))
+        self.validate = self.preprocess(
+            list(self.validate[self.x_col]), 
+            list(self.validate[self.y_col]))
+        self.test = self.preprocess(
+            list(self.test[self.x_col]), 
+            list(self.test[self.y_col]))
 
     def train_dataloader(self):
         dataset = TensorDataset(
             self.train['input_ids'],
             self.train['attention_mask'],
             self.train['labels'])
-        train_data = DataLoader(dataset, batch_size=self.batch_size, shuffle=True)
-        return train_data
+        return DataLoader(dataset, batch_size=self.batch_size, shuffle=True)
 
     def val_dataloader(self):
         dataset = TensorDataset(
             self.validate['input_ids'],
             self.validate['attention_mask'],
             self.validate['labels'])
-        val_data = DataLoader(dataset, batch_size=self.batch_size, shuffle=True)
-        return val_data
+        return DataLoader(dataset, batch_size=self.batch_size)
 
     def test_dataloader(self):
         dataset = TensorDataset(
             self.test['input_ids'],
             self.test['attention_mask'],
             self.test['labels'])
-        test_data = DataLoader(dataset, batch_size=self.batch_size, shuffle=True)
-        return test_data
+        return DataLoader(dataset, batch_size=self.batch_size)
 
-    def transform(
-            self,
-            source_sequences,
-            target_sequences,
-            pad_to_max_length=True,
-            return_tensors="pt"):
+    def preprocess(self, source_sequences, target_sequences, pad_to_max_length=True, return_tensors="pt"):
         """Transforms data into tokenized input/output sequences."""
+        transformed_x = self.tokenizer(source_sequences, max_length=self.max_source_length,
+                        padding=pad_to_max_length, truncation=True, return_tensors=return_tensors, 
+                        add_prefix_space=True)
+        transformed_y = self.tokenizer(target_sequences, max_length=self.max_target_length,
+                        padding=pad_to_max_length, truncation=True, return_tensors=return_tensors,
+                        add_prefix_space=True)
 
-        # tokenize sequences
-        transformed_x = self.tokenizer(
-            source_sequences,
-            max_length=self.max_source_length,
-            padding="max_length" if pad_to_max_length else None,
-            truncation=True,
-            return_tensors=return_tensors,
-            add_prefix_space=True)
-        transformed_y = self.tokenizer(
-            target_sequences,
-            max_length=self.max_target_length,
-            padding="max_length" if pad_to_max_length else None,
-            truncation=True,
-            return_tensors=return_tensors,
-            add_prefix_space=True)
-
-        # create data set
-        input_ids = transformed_x['input_ids']
-        attention_masks = transformed_x['attention_mask']
-        labels = transformed_y['input_ids']
-        dataset = {
-            "input_ids": input_ids,
-            "attention_mask": attention_masks,
-            "labels": labels,
+        return {
+            "input_ids": transformed_x['input_ids'],
+            "attention_mask": transformed_x['attention_mask'],
+            "labels": transformed_y['input_ids'],
         }
-
-        return dataset
