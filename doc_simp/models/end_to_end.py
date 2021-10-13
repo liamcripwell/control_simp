@@ -10,13 +10,13 @@ import pytorch_lightning as pl
 from torch.utils.data import DataLoader, TensorDataset
 from transformers import BartTokenizer, BartForConditionalGeneration
 
-from disco_split.models.utils import freeze_params, freeze_embeds, lmap, calculate_bleu, calculate_sent_bleu, flatten_list
+from disco_split.models.utils import freeze_params, freeze_embeds, lmap, calculate_bleu, flatten_list
 
 
 class BartFinetuner(pl.LightningModule):
 
     loss_names = ["loss"]
-    metric_names = ["bleu", "sent1_bleu", "sent2_bleu"]
+    metric_names = ["bleu"]
     default_val_metric = "bleu"
 
     def __init__(self, hparams):
@@ -229,8 +229,7 @@ class BartFinetuner(pl.LightningModule):
 
     def calc_generative_metrics(self, preds, target) -> dict:
         bleu = calculate_bleu(preds, target)
-        sent_bleu = calculate_sent_bleu(preds, target)
-        return {**bleu, **sent_bleu}
+        return {**bleu}
 
     @staticmethod
     def add_model_specific_args(parent_parser):
