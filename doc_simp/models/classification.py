@@ -158,8 +158,8 @@ class LightningBert(pl.LightningModule):
             parents=[parent_parser], add_help=False)
 
         parser.add_argument("--name", type=str, default=None, required=False,)
-        parser.add_argument("--save_dir", type=str, default=None, required=False,)
         parser.add_argument("--project", type=str, default=None, required=False,)
+        parser.add_argument("--save_dir", type=str, default=None, required=False,)
         parser.add_argument("--checkpoint", type=str, default=None, required=False,)
         parser.add_argument("--wandb_id", type=str, default=None, required=False,)
         parser.add_argument("--model_type", type=str, default="roberta", required=False,)
@@ -209,8 +209,8 @@ class BertDataModule(pl.LightningDataModule):
 
     def setup(self, stage):
         self.data = pd.read_csv(self.data_file)
-        self.data = self.data[:min(self.max_samples, len(self.data))]
-        # self.data = self.data.sample(frac=1)[:min(self.max_samples, len(self.data))] # NOTE: this will actually exclude the last item
+        # self.data = self.data[:min(self.max_samples, len(self.data))]
+        self.data = self.data.sample(frac=1)[:min(self.max_samples, len(self.data))] # NOTE: this will actually exclude the last item
         if self.val_file is not None:
             print("Loading specific validation samples...")
             self.validate = pd.read_csv(self.val_file)
