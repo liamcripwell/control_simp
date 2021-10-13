@@ -30,8 +30,8 @@ class BartFinetuner(pl.LightningModule):
         # load pretained tokenizer and add new control tokens to vocab
         tokenizer = BartTokenizer.from_pretrained(
             'facebook/bart-base', add_prefix_space=True)
-        self.add_new_tokens()
         self.tokenizer = tokenizer
+        self.add_new_tokens()
 
         # basic hyperparams
         self.hparams = hparams
@@ -184,7 +184,7 @@ class BartFinetuner(pl.LightningModule):
                     "monitor": "val_loss",
                 },
             }
-            
+
         return optimizer
 
     @property
