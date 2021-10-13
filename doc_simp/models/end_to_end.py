@@ -25,22 +25,17 @@ class BartFinetuner(pl.LightningModule):
         # load pretained model
         bart_model = BartForConditionalGeneration.from_pretrained(
             "facebook/bart-base", return_dict=True)
+        self.model = bart_model
 
-        # load pretained tokenizer and add new special tokens
+        # load pretained tokenizer and add new control tokens to vocab
         tokenizer = BartTokenizer.from_pretrained(
             'facebook/bart-base', add_prefix_space=True)
-
-        self.model = bart_model
-        self.tokenizer = tokenizer
-
-        # extend tokenizer vocab with new control tokens
         self.add_new_tokens()
+        self.tokenizer = tokenizer
 
         # basic hyperparams
         self.hparams = hparams
         self.learning_rate = self.hparams.learning_rate
-        self.step_count = 0
-        self.vocab_size = self.model.config.vocab_size
         self.decoder_start_token_id = None  # default to config (self.pad?)
 
         # evaluation hyperparams
@@ -58,7 +53,7 @@ class BartFinetuner(pl.LightningModule):
         if self.hparams.freeze_embeds:
             freeze_embeds(self.model)
 
-        # training log cache to log mean every n steps
+        # training loss cache to log mean every n steps
         self.train_losses = []
 
     def add_new_tokens(self):
@@ -71,12 +66,7 @@ class BartFinetuner(pl.LightningModule):
 
     def training_step(self, batch, batch_idx):
         loss_tensors = self._step(batch)
-
-        logs = {
-            name: loss for name,
-            loss in zip(
-                self.loss_names,
-                loss_tensors)}
+        logs = {name: loss for name, loss in zip(self.loss_names, loss_tensors)}
 
         self.train_losses.append(loss_tensors[0])
 
@@ -86,7 +76,7 @@ class BartFinetuner(pl.LightningModule):
             self.logger.experiment.log({'train_loss': avg_loss})
             self.train_losses = []
 
-        return {"loss": loss_tensors[0]}#, "log": logs}
+        return {"loss": loss_tensors[0]} #, "log": logs}
 
     def _step(self, batch):
         input_ids, attention_mask, labels = batch
@@ -104,8 +94,7 @@ class BartFinetuner(pl.LightningModule):
 
         # compute loss
         ce_loss_fct = torch.nn.CrossEntropyLoss(ignore_index=self.pad)
-        loss = ce_loss_fct(
-            lm_logits.view(-1, lm_logits.shape[-1]), labels.view(-1))
+        loss = ce_loss_fct(lm_logits.view(-1, lm_logits.shape[-1]), labels.view(-1))
 
         return (loss,)
 
@@ -114,28 +103,26 @@ class BartFinetuner(pl.LightningModule):
         return val_results
 
     def validation_epoch_end(self, outputs, prefix="val") -> Dict:
-        self.step_count += 1
-
+        # compile val loss/metrics and calculate aggregates
         losses = {k: torch.stack([x[k] for x in outputs]).mean()
                   for k in self.loss_names}
         loss = losses["loss"]
-        generative_metrics = {k: np.array([x[k] for x in outputs]).mean(
-        ) for k in self.metric_names + ["gen_time", "gen_len"]}
+        generative_metrics = {k: np.array([x[k] for x in outputs]).mean() 
+                                for k in self.metric_names + ["gen_time", "gen_len"]}
         metric_val = (generative_metrics[self.val_metric]
                       if self.val_metric in generative_metrics else losses[self.val_metric])
-        metric_tensor: torch.FloatTensor = torch.tensor(
-            metric_val).type_as(loss)
+        metric_tensor: torch.FloatTensor = torch.tensor(metric_val).type_as(loss)
         generative_metrics.update({k: v.item() for k, v in losses.items()})
         losses.update(generative_metrics)
         all_metrics = {f"{prefix}_avg_{k}": x for k, x in losses.items()}
-        all_metrics["step_count"] = self.step_count
+        
         # callback writes this to self.metrics_save_path
         self.metrics[prefix].append(all_metrics)
 
         # wandb log
         self.logger.experiment.log({
             f"{prefix}_loss": loss,
-            # f"{prefix}_{self.val_metric}": metric_tensor,
+            f"{prefix}_{self.val_metric}": metric_tensor,
         })
 
         return {
@@ -152,7 +139,6 @@ class BartFinetuner(pl.LightningModule):
 
     def _generative_step(self, batch):
         t0 = time.time()
-
         input_ids, attention_mask, labels = batch
 
         # generate sequences from batch input
@@ -165,17 +151,12 @@ class BartFinetuner(pl.LightningModule):
             max_length=self.eval_max_length,
         )
         gen_time = (time.time() - t0) / input_ids.shape[0]
-
         preds: List[str] = self.ids_to_clean_text(generated_ids)
         target: List[str] = self.ids_to_clean_text(labels)
 
         # compute loss
         loss_tensors = self._step(batch)
-        base_metrics = {
-            name: loss for name,
-            loss in zip(
-                self.loss_names,
-                loss_tensors)}
+        base_metrics = {name: loss for name, loss in zip(self.loss_names, loss_tensors)}
 
         # calculate other metrics
         bleu: Dict = self.calc_generative_metrics(preds, target)
@@ -205,18 +186,6 @@ class BartFinetuner(pl.LightningModule):
         prev_output_tokens[:, 0] = input_ids.gather(1, index_of_eos).squeeze()
         prev_output_tokens[:, 1:] = input_ids[:, :-1]
         return prev_output_tokens
-
-    def generate_text(self, batch):
-        '''Generate text for batch of input data.'''
-        generated_ids = self.model.generate(
-            batch["input_ids"],
-            attention_mask=batch["attention_mask"],
-            use_cache=True,
-            decoder_start_token_id=self.decoder_start_token_id,
-            num_beams=self.eval_beams,
-            max_length=self.eval_max_length,
-        )
-        return self.ids_to_clean_text(generated_ids)
 
     def ids_to_clean_text(self, generated_ids: List[int]):
         gen_text = self.tokenizer.batch_decode(
@@ -249,39 +218,16 @@ class BartFinetuner(pl.LightningModule):
         parser.add_argument("--data_file2", type=str, default=None, required=False)
         parser.add_argument("--train_split", type=float, default=0.8)
         parser.add_argument("--max_samples", type=float)
-        parser.add_argument(
-            "--max_source_length",
-            default=128,
-            type=int,
+        parser.add_argument("--max_source_length", type=int, default=128,
             help="The maximum total input sequence length after tokenization. Sequences longer "
-            "than this will be truncated, sequences shorter will be padded.",
-        )
-        parser.add_argument(
-            "--max_target_length",
-            default=128,
-            type=int,
+            "than this will be truncated, sequences shorter will be padded.",)
+        parser.add_argument("--max_target_length", type=int, default=128,
             help="The maximum total input sequence length after tokenization. Sequences longer "
-            "than this will be truncated, sequences shorter will be padded.",
-        )
-        parser.add_argument(
-            "--eval_beams",
-            type=int,
-            default=None,
-            required=False)
-        parser.add_argument(
-            "--val_metric",
-            type=str,
-            default=None,
-            required=False,
-            choices=[
-                "bleu",
-                "rouge2",
-                "loss",
-                None])
-        parser.add_argument(
-            "--eval_max_gen_length",
-            type=int,
-            default=None,
+            "than this will be truncated, sequences shorter will be padded.",)
+        parser.add_argument("--eval_beams", type=int, default=None, required=False)
+        parser.add_argument("--val_metric", type=str, default=None, required=False,
+            choices=["bleu", "rouge2", "loss",None])
+        parser.add_argument("--eval_max_gen_length", type=int, default=None,
             help="never generate more than n tokens")
 
         return parser
