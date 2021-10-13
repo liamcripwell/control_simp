@@ -36,6 +36,7 @@ class BartFinetuner(pl.LightningModule):
         # basic hyperparams
         self.hparams = hparams
         self.learning_rate = self.hparams.learning_rate
+        self.use_lr_scheduler = self.hparams.lr_scheduler
         self.decoder_start_token_id = None  # default to config (self.pad?)
 
         # evaluation hyperparams
@@ -172,6 +173,18 @@ class BartFinetuner(pl.LightningModule):
 
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate)
+
+        # use a learning rate scheduler if specified
+        if self.use_lr_scheduler:
+            scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min')
+            return {
+                "optimizer": optimizer,
+                "lr_scheduler": {
+                    "scheduler": scheduler,
+                    "monitor": "val_loss",
+                },
+            }
+            
         return optimizer
 
     @property
@@ -214,23 +227,19 @@ class BartFinetuner(pl.LightningModule):
         parser.add_argument("--freeze_encoder", action="store_true")
         parser.add_argument("--freeze_embeds", action="store_true")
         parser.add_argument("--learning_rate", type=float, default=2e-5)
+        parser.add_argument("--lr_scheduler", action="store_true")
         parser.add_argument("--batch_size", type=int, default=16)
         parser.add_argument("--data_file", type=str, default=None, required=True)
         parser.add_argument("--max_samples", type=int, default=-1)
         parser.add_argument("--train_split", type=float, default=0.9)
         parser.add_argument("--val_split", type=float, default=0.05)
         parser.add_argument("--val_file", type=str, default=None, required=False)
-        parser.add_argument("--max_source_length", type=int, default=128,
-            help="The maximum total input sequence length after tokenization. Sequences longer "
-            "than this will be truncated, sequences shorter will be padded.",)
-        parser.add_argument("--max_target_length", type=int, default=128,
-            help="The maximum total input sequence length after tokenization. Sequences longer "
-            "than this will be truncated, sequences shorter will be padded.",)
+        parser.add_argument("--max_source_length", type=int, default=128)
+        parser.add_argument("--max_target_length", type=int, default=128)
         parser.add_argument("--eval_beams", type=int, default=None, required=False)
         parser.add_argument("--val_metric", type=str, default=None, required=False,
             choices=["bleu", "rouge2", "loss",None])
-        parser.add_argument("--eval_max_gen_length", type=int, default=None,
-            help="never generate more than n tokens")
+        parser.add_argument("--eval_max_gen_length", type=int, default=None)
 
         return parser
 
