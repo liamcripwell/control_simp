@@ -10,7 +10,7 @@ import pytorch_lightning as pl
 from torch.utils.data import DataLoader, TensorDataset
 from transformers import BartTokenizer, BartForConditionalGeneration
 
-from disco_split.models.utils import freeze_params, freeze_embeds, lmap, calculate_bleu, flatten_list
+from doc_simp.models.utils import freeze_params, freeze_embeds, lmap, calculate_bleu
 
 
 class BartFinetuner(pl.LightningModule):
@@ -131,7 +131,6 @@ class BartFinetuner(pl.LightningModule):
         all_metrics["step_count"] = self.step_count
         # callback writes this to self.metrics_save_path
         self.metrics[prefix].append(all_metrics)
-        preds = flatten_list([x["preds"] for x in outputs])
 
         # wandb log
         self.logger.experiment.log({
@@ -141,7 +140,6 @@ class BartFinetuner(pl.LightningModule):
 
         return {
             # "log": all_metrics,
-            "preds": preds,
             f"{prefix}_loss": loss,
             f"{prefix}_{self.val_metric}": metric_tensor,
         }
