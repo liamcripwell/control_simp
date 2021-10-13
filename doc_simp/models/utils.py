@@ -1,7 +1,6 @@
 import itertools
 from typing import Callable, Iterable, List
 
-import nltk
 from torch import nn
 from sacrebleu import corpus_bleu
 
