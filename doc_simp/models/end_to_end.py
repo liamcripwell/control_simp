@@ -108,28 +108,28 @@ class BartFinetuner(pl.LightningModule):
         losses = {k: torch.stack([x[k] for x in outputs]).mean()
                   for k in self.loss_names}
         loss = losses["loss"]
-        # generative_metrics = {k: np.array([x[k] for x in outputs]).mean() 
-        #                         for k in self.metric_names + ["gen_time", "gen_len"]}
-        # metric_val = (generative_metrics[self.val_metric]
-        #               if self.val_metric in generative_metrics else losses[self.val_metric])
-        # metric_tensor: torch.FloatTensor = torch.tensor(metric_val).type_as(loss)
-        # generative_metrics.update({k: v.item() for k, v in losses.items()})
-        # losses.update(generative_metrics)
-        # all_metrics = {f"{prefix}_avg_{k}": x for k, x in losses.items()}
+        generative_metrics = {k: np.array([x[k] for x in outputs]).mean() 
+                                for k in self.metric_names + ["gen_time", "gen_len"]}
+        metric_val = (generative_metrics[self.val_metric]
+                      if self.val_metric in generative_metrics else losses[self.val_metric])
+        metric_tensor: torch.FloatTensor = torch.tensor(metric_val).type_as(loss)
+        generative_metrics.update({k: v.item() for k, v in losses.items()})
+        losses.update(generative_metrics)
+        all_metrics = {f"{prefix}_avg_{k}": x for k, x in losses.items()}
         
         # callback writes this to self.metrics_save_path
-        # self.metrics[prefix].append(all_metrics)
+        self.metrics[prefix].append(all_metrics)
 
         # wandb log
         self.logger.experiment.log({
             f"{prefix}_loss": loss,
-            # f"{prefix}_{self.val_metric}": metric_tensor,
+            f"{prefix}_{self.val_metric}": metric_tensor,
         })
 
         return {
             # "log": all_metrics,
             f"{prefix}_loss": loss,
-            # f"{prefix}_{self.val_metric}": metric_tensor,
+            f"{prefix}_{self.val_metric}": metric_tensor,
         }
 
     def test_step(self, batch, batch_idx):
@@ -143,31 +143,31 @@ class BartFinetuner(pl.LightningModule):
         input_ids, attention_mask, labels = batch
 
         # generate sequences from batch input
-        # generated_ids = self.model.generate(
-        #     input_ids,
-        #     attention_mask=attention_mask,
-        #     use_cache=True,
-        #     decoder_start_token_id=self.decoder_start_token_id,
-        #     num_beams=self.eval_beams,
-        #     max_length=self.eval_max_length,
-        # )
-        # gen_time = (time.time() - t0) / input_ids.shape[0]
-        # preds: List[str] = self.ids_to_clean_text(generated_ids)
-        # target: List[str] = self.ids_to_clean_text(labels)
+        generated_ids = self.model.generate(
+            input_ids,
+            attention_mask=attention_mask,
+            use_cache=True,
+            decoder_start_token_id=self.decoder_start_token_id,
+            num_beams=self.eval_beams,
+            max_length=self.eval_max_length,
+        )
+        gen_time = (time.time() - t0) / input_ids.shape[0]
+        preds: List[str] = self.ids_to_clean_text(generated_ids)
+        target: List[str] = self.ids_to_clean_text(labels)
 
         # compute loss
         loss_tensors = self._step(batch)
         base_metrics = {name: loss for name, loss in zip(self.loss_names, loss_tensors)}
 
         # calculate other metrics
-        # bleu: Dict = self.calc_generative_metrics(preds, target)
-        # summ_len = np.mean(lmap(len, generated_ids))
-        # base_metrics.update(
-            # gen_time=gen_time,
-            # gen_len=summ_len,
-            # preds=preds,
-            # target=target,
-            # **bleu)
+        bleu: Dict = self.calc_generative_metrics(preds, target)
+        summ_len = np.mean(lmap(len, generated_ids))
+        base_metrics.update(
+            gen_time=gen_time,
+            gen_len=summ_len,
+            preds=preds,
+            target=target,
+            **bleu)
 
         return base_metrics
 
