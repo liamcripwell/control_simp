@@ -47,6 +47,7 @@ class BartFinetuner(pl.LightningModule):
         self.metrics = defaultdict(list)
         self.eval_beams = self.model.config.num_beams if self.hparams.eval_beams is None else self.hparams.eval_beams
         self.val_metric = self.default_val_metric if self.hparams.val_metric is None else self.hparams.val_metric
+        self.skip_val_gen = self.hparams.skip_val_gen
 
         # freeze params if required
         if self.hparams.freeze_encoder:
@@ -100,7 +101,11 @@ class BartFinetuner(pl.LightningModule):
         return (loss,)
 
     def validation_step(self, batch, batch_idx) -> Dict:
-        val_results = self._generative_step(batch)
+        if self.skip_val_gen:
+            loss_tensors = self._step(batch)
+            val_results = {name: loss for name, loss in zip(self.loss_names, loss_tensors)}
+        else:
+            val_results = self._generative_step(batch)
         return val_results
 
     def validation_epoch_end(self, outputs, prefix="val") -> Dict:
@@ -108,29 +113,31 @@ class BartFinetuner(pl.LightningModule):
         losses = {k: torch.stack([x[k] for x in outputs]).mean()
                   for k in self.loss_names}
         loss = losses["loss"]
-        generative_metrics = {k: np.array([x[k] for x in outputs]).mean() 
-                                for k in self.metric_names + ["gen_time", "gen_len"]}
-        metric_val = (generative_metrics[self.val_metric]
-                      if self.val_metric in generative_metrics else losses[self.val_metric])
-        metric_tensor: torch.FloatTensor = torch.tensor(metric_val).type_as(loss)
-        generative_metrics.update({k: v.item() for k, v in losses.items()})
-        losses.update(generative_metrics)
-        all_metrics = {f"{prefix}_avg_{k}": x for k, x in losses.items()}
-        
-        # callback writes this to self.metrics_save_path
-        self.metrics[prefix].append(all_metrics)
-
-        # wandb log
-        self.logger.experiment.log({
+        result = {
             f"{prefix}_loss": loss,
-            f"{prefix}_{self.val_metric}": metric_tensor,
-        })
-
-        return {
-            # "log": all_metrics,
-            f"{prefix}_loss": loss,
-            f"{prefix}_{self.val_metric}": metric_tensor,
         }
+
+        if not self.skip_val_gen:
+            # add generative metric summaries to losses
+            generative_metrics = {k: np.array([x[k] for x in outputs]).mean() 
+                                    for k in self.metric_names + ["gen_time", "gen_len"]}
+            metric_val = (generative_metrics[self.val_metric]
+                        if self.val_metric in generative_metrics else losses[self.val_metric])
+            metric_tensor: torch.FloatTensor = torch.tensor(metric_val).type_as(loss)
+            result[f"{prefix}_{self.val_metric}"] = metric_tensor
+
+            generative_metrics.update({k: v.item() for k, v in losses.items()})
+            losses.update(generative_metrics)
+        
+        # wandb log
+        self.logger.experiment.log(result)
+
+        # callback writes this to self.metrics_save_path
+        all_metrics = {f"{prefix}_avg_{k}": x for k, x in losses.items()}
+        self.metrics[prefix].append(all_metrics)
+        # result["log"] = all_metrics
+
+        return result
 
     def test_step(self, batch, batch_idx):
         return self._generative_step(batch)
@@ -224,6 +231,7 @@ class BartFinetuner(pl.LightningModule):
         parser.add_argument("--x_col", type=str, default="x", required=False,)
         parser.add_argument("--y_col", type=str, default="y", required=False,)
         parser.add_argument("--train_check_interval", type=float, default=0.20)
+        parser.add_argument("--skip_val_gen", action="store_true")
         parser.add_argument("--freeze_encoder", action="store_true")
         parser.add_argument("--freeze_embeds", action="store_true")
         parser.add_argument("--learning_rate", type=float, default=2e-5)
