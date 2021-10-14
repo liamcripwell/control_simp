@@ -27,7 +27,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--arch", type=str, default=None, required=True)
     args = parser.parse_known_args()[0]
-    arch_classes = ARCHS[args["arch"]]
+    arch_classes = ARCHS[args.arch]
 
     # add model specific args to parser
     parser = arch_classes.module.add_model_specific_args(parser)
