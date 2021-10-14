@@ -30,7 +30,7 @@ if __name__ == '__main__':
     arch_classes = ARCHS[args["arch"]]
 
     # add model specific args to parser
-    parser = arch_classes["module"].add_model_specific_args(parser)
+    parser = arch_classes.module.add_model_specific_args(parser)
 
     # add all the available trainer options to argparse
     # ie: now --gpus --num_nodes ... --fast_dev_run all work in the cli
@@ -39,10 +39,10 @@ if __name__ == '__main__':
 
     # prepare data module and trainer class
     if args.checkpoint is None:
-        model = arch_classes["module"](hparams=args)
+        model = arch_classes.module(hparams=args)
     else:
-        model = arch_classes["module"].load_from_checkpoint(args.checkpoint, hparams=args)
-    dm = arch_classes["datam"](model.tokenizer, hparams=args)
+        model = arch_classes.module.load_from_checkpoint(args.checkpoint, hparams=args)
+    dm = arch_classes.datam(model.tokenizer, hparams=args)
 
     # construct default run name
     if args.name is None:
