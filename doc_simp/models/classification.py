@@ -288,7 +288,19 @@ class BertDataModule(pl.LightningDataModule):
         return test_data
 
     def preprocess(self, seqs, labels=None):
-        seqs = ["[CLS]" + str(seq).replace("<SEP> ", "") + " [SEP]" for seq in seqs] # TODO: add custom token replacer
+        # TODO: add custom token replacer instead
+        in_seqs = []
+        for seq in seqs:
+            toks = str(seq).split()
+            buff = []
+            c = 0
+            for tok in toks:
+                if c == 64: break
+                if tok != "<SEP>":
+                    buff.append(tok)
+            in_seqs.append(" ".join(buff))
+        seqs = in_seqs
+
         padded_sequences = self.tokenizer(seqs, padding=True, truncation=True)
         input_ids = padded_sequences["input_ids"]
         attention_mask = padded_sequences["attention_mask"]
