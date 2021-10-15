@@ -298,6 +298,7 @@ class BertDataModule(pl.LightningDataModule):
                 if c == 64: break
                 if tok != "<SEP>":
                     buff.append(tok)
+                c += 1
             in_seqs.append(" ".join(buff))
         seqs = in_seqs
 
