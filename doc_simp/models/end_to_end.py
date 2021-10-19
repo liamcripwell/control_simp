@@ -10,7 +10,7 @@ import pytorch_lightning as pl
 from torch.utils.data import DataLoader, TensorDataset
 from transformers import BartTokenizer, BartForConditionalGeneration
 
-from doc_simp.models.utils import freeze_params, freeze_embeds, lmap, calculate_bleu
+from doc_simp.models.utils import freeze_params, freeze_embeds, lmap, calculate_bleu, TokenFilter
 
 
 class BartFinetuner(pl.LightningModule):
@@ -328,6 +328,8 @@ class BartDataModule(pl.LightningDataModule):
 
     def preprocess(self, source_sequences, target_sequences, pad_to_max_length=True, return_tensors="pt"):
         """Transforms data into tokenized input/output sequences."""
+        source_sequences = TokenFilter(max_len=self.max_source_length, blacklist=["<SEP>"])(source_sequences)
+
         transformed_x = self.tokenizer(source_sequences, max_length=self.max_source_length,
                             padding=pad_to_max_length, truncation=True, 
                             return_tensors=return_tensors, add_prefix_space=True)

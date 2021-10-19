@@ -8,6 +8,9 @@ import pytorch_lightning as pl
 from torch.utils.data import DataLoader, TensorDataset
 from transformers import BertTokenizer, AdamW, BertForSequenceClassification, RobertaTokenizer, RobertaForSequenceClassification
 
+from doc_simp.models.utils import TokenFilter
+
+
 INPUTS = {
     "roberta": ["input_ids", "attention_mask", "labels"],
     "bert": ["input_ids", "attention_mask", "token_type_ids", "labels"]
@@ -185,7 +188,7 @@ class LightningBert(pl.LightningModule):
 
 class BertDataModule(pl.LightningDataModule):
 
-    MAX_LEN = 128
+    MAX_LEN = 64
 
     def __init__(self, tokenizer, hparams=None):
         super().__init__()
@@ -288,19 +291,7 @@ class BertDataModule(pl.LightningDataModule):
         return test_data
 
     def preprocess(self, seqs, labels=None):
-        # TODO: add custom token replacer instead
-        in_seqs = []
-        for seq in seqs:
-            toks = str(seq).split()
-            buff = []
-            c = 0
-            for tok in toks:
-                if c == 64: break
-                if tok != "<SEP>":
-                    buff.append(tok)
-                c += 1
-            in_seqs.append(" ".join(buff))
-        seqs = in_seqs
+        seqs = TokenFilter(max_len=self.MAX_LEN, blacklist=["<SEP>"])(seqs)
 
         padded_sequences = self.tokenizer(seqs, padding=True, truncation=True)
         input_ids = padded_sequences["input_ids"]
