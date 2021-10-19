@@ -35,3 +35,23 @@ def calculate_bleu(output_lns, refs_lns, **kwargs) -> dict:
                 **kwargs).score,
             4)}
 
+class TokenFilter():
+
+    def __init__(self, max_len=-1, blacklist=[]) -> None:
+        self.max_len = max_len
+        self.blacklist = blacklist
+
+    def __call__(self, seqs) -> str:
+        if not isinstance(seqs, List): seqs = [seqs]
+
+        for i in range(len(seqs)):
+            buff = []
+            toks = str(seqs[i]).split()
+            for j in range(len(toks)):
+                if toks[j] not in self.blacklist:
+                    buff.append(toks[j])
+                if len(buff) == self.max_len: break
+            seqs[i] = " ".join(buff)
+
+        return seqs
+
