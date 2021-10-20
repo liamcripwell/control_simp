@@ -113,7 +113,7 @@ class LightningBert(pl.LightningModule):
 
         accs = [[] for _ in range(self.num_labels)]
         for i in range(len(logits)):
-            ref = _batch["label"][i]
+            ref = _batch["labels"][i]
             pred = logits[i].argmax()
             accs[ref].append(pred == ref)
 
