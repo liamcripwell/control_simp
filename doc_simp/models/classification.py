@@ -80,7 +80,10 @@ class LightningBert(pl.LightningModule):
         self.use_lr_scheduler = self.hparams.lr_scheduler
 
         self.num_labels = num_labels
-        self.log_class_acc = self.hparams.log_class_acc
+        if self.hparams.log_class_acc:
+            self.log_class_acc = self.hparams.log_class_acc
+        else:
+            self.log_class_acc = False
 
         self.train_losses = []
 
