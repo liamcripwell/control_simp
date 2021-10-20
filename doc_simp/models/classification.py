@@ -2,6 +2,7 @@ import math
 import argparse
 
 import torch
+from torch import tensor
 import numpy as np
 import pandas as pd
 import pytorch_lightning as pl
@@ -111,11 +112,11 @@ class LightningBert(pl.LightningModule):
         output = self.model(**_batch, return_dict=True)
         loss, logits = extract_results(output)
 
-        accs = [[] for _ in range(self.num_labels)]
+        accs = [tensor([]) for _ in range(self.num_labels)]
         for i in range(len(logits)):
             ref = _batch["labels"][i]
             pred = logits[i].argmax()
-            accs[ref].append(pred == ref)
+            accs[ref] = torch.cat((accs[ref], tensor([pred == ref])))
 
         output = {
             "loss": loss,
@@ -131,7 +132,7 @@ class LightningBert(pl.LightningModule):
             f"{prefix}_loss": loss,
         }
         for i in range(self.num_labels):
-            agg = np.mean([np.mean(x["accs"][i]) for x in outputs])
+            agg = torch.stack([torch.mean(x["accs"][i]) for x in outputs]).mean()
             result[f"{prefix}_{i}_acc"] = agg
 
         # wandb log
