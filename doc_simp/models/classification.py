@@ -131,7 +131,7 @@ class LightningBert(pl.LightningModule):
             f"{prefix}_loss": loss,
         }
         for i in range(self.num_labels):
-            agg = torch.stack([x["accs"][i] for x in outputs]).mean()
+            agg = torch.stack([np.mean(x["accs"][i]) for x in outputs]).mean()
             result[f"{prefix}_{i}_acc"] = agg
 
         # wandb log
