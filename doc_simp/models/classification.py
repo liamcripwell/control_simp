@@ -82,6 +82,8 @@ class LightningBert(pl.LightningModule):
         self.learning_rate = self.hparams.learning_rate
         self.use_lr_scheduler = self.hparams.lr_scheduler
 
+        self.num_labels = num_labels
+
         self.train_losses = []
 
     def forward(self, input_ids, **kwargs):
@@ -107,12 +109,18 @@ class LightningBert(pl.LightningModule):
     def validation_step(self, batch, batch_idx):
         _batch = {INPUTS[self.model_type][i] : batch[i] for i in range(len(batch))}
         output = self.model(**_batch, return_dict=True)
-
         loss, logits = extract_results(output)
+
+        accs = [[] for _ in range(self.num_labels)]
+        for i in range(len(logits)):
+            ref = _batch["label"][i]
+            pred = logits[i].argmax()
+            accs[ref].append(pred == ref)
 
         output = {
             "loss": loss,
             "preds": logits,
+            "accs": accs
         }
 
         return output
@@ -122,6 +130,9 @@ class LightningBert(pl.LightningModule):
         result = {
             f"{prefix}_loss": loss,
         }
+        for i in range(self.num_labels):
+            agg = torch.stack([x["accs"][i] for x in outputs]).mean()
+            result[f"{prefix}_{i}_acc"] = agg
 
         # wandb log
         self.logger.experiment.log(result)
