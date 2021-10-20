@@ -84,6 +84,7 @@ class LightningBert(pl.LightningModule):
         self.use_lr_scheduler = self.hparams.lr_scheduler
 
         self.num_labels = num_labels
+        self.log_class_acc = self.hparams.log_class_acc
 
         self.train_losses = []
 
@@ -112,17 +113,19 @@ class LightningBert(pl.LightningModule):
         output = self.model(**_batch, return_dict=True)
         loss, logits = extract_results(output)
 
-        accs = [tensor([]) for _ in range(self.num_labels)]
-        for i in range(len(logits)):
-            ref = _batch["labels"][i]
-            pred = logits[i].argmax()
-            accs[ref] = torch.cat((accs[ref], tensor([pred == ref])))
-
         output = {
             "loss": loss,
             "preds": logits,
-            "accs": accs
         }
+
+        # accumalte relative acc for each class
+        if self.log_class_acc:
+            accs = [tensor([]) for _ in range(self.num_labels)]
+            for i in range(len(logits)):
+                ref = _batch["labels"][i]
+                pred = logits[i].argmax()
+                accs[ref] = torch.cat((accs[ref], tensor([pred == ref])))
+            output["accs"] = accs
 
         return output
 
@@ -131,9 +134,12 @@ class LightningBert(pl.LightningModule):
         result = {
             f"{prefix}_loss": loss,
         }
-        for i in range(self.num_labels):
-            agg = torch.stack([torch.mean(x["accs"][i]) for x in outputs]).mean()
-            result[f"{prefix}_{i}_acc"] = agg
+        
+        # log relative performance for each class
+        if self.log_class_acc:
+            for i in range(self.num_labels):
+                agg = torch.stack([torch.mean(x["accs"][i]) for x in outputs]).mean()
+                result[f"{prefix}_{i}_acc"] = agg
 
         # wandb log
         self.logger.experiment.log(result)
@@ -187,6 +193,7 @@ class LightningBert(pl.LightningModule):
         parser.add_argument("--freeze_embeds", action="store_true")
         parser.add_argument("--learning_rate", type=float, default=2e-5)
         parser.add_argument("--lr_scheduler", action="store_true")
+        parser.add_argument("--log_class_acc", action="store_true")
         parser.add_argument("--batch_size", type=int, default=16)
         parser.add_argument("--data_file", type=str, default=None, required=True)
         parser.add_argument("--data_file2", type=str, default=None, required=False)
