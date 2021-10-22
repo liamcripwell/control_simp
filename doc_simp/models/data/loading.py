@@ -20,7 +20,8 @@ class LazyTensorDataset(Dataset):
         seq = item[self.x_col]
         label = item[self.y_col]
 
-        # NOTE: we're assume this function expects a mini-batch
+        # NOTE: we're assume this function expects a mini-batch so we wrap in a list
+        # and later extract the 0th index item
         data = self.transform([seq], [label])
 
         # pad to a fixed length to avoid dim issues when batching
