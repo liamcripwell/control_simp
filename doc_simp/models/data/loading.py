@@ -27,9 +27,9 @@ class LazyTensorDataset(Dataset):
         seq_len = len(data["input_ids"][0])
         if seq_len < self.fixed_len:
             data["input_ids"] = torch.cat(
-                (data["input_ids"][0], torch.ones(self.fixed_len - seq_len)))
+                (data["input_ids"][0], torch.ones(self.fixed_len - seq_len, dtype=int)))
             data["attention_mask"] = torch.cat(
-                (data["attention_mask"][0], torch.zeros(self.fixed_len - seq_len)))
+                (data["attention_mask"][0], torch.zeros(self.fixed_len - seq_len, dtype=int)))
         else:
             data = {k: v[0] for k, v in data.items()}
 
