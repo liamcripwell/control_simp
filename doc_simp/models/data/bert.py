@@ -1,3 +1,5 @@
+import os
+
 import torch
 import numpy as np
 import pandas as pd
@@ -88,7 +90,7 @@ class BertDataModule(pl.LightningDataModule):
         return dataset
 
     def train_dataloader(self):
-        return DataLoader(self.train, batch_size=self.batch_size, shuffle=True, num_workers=4, pin_memory=True)
+        return DataLoader(self.train, batch_size=self.batch_size, shuffle=True, num_workers=os.cpu_count(), pin_memory=True)
 
     def val_dataloader(self):
         return DataLoader(self.validate, batch_size=self.batch_size, num_workers=1, pin_memory=True)
