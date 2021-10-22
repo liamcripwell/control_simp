@@ -4,12 +4,13 @@ from torch.utils.data import Dataset
 
 class LazyTensorDataset(Dataset):
 
-    def __init__(self, df, x_col, y_col, features, transform):
+    def __init__(self, df, x_col, y_col, features, transform, fixed_len=64):
         self.df = df
         self.x_col = x_col
         self.y_col = y_col
         self.features = features
         self.transform = transform
+        self.fixed_len = fixed_len
 
     def __len__(self):
         return len(self.df)
@@ -21,4 +22,13 @@ class LazyTensorDataset(Dataset):
 
         # NOTE: we're assume this function expects a mini-batch
         data = self.transform([seq], [label])
+
+        # pad to a fixed length to avoid dim issues when batching
+        seq_len = len(data["input_ids"])
+        if seq_len < self.fixed_len:
+            data["input_ids"] = torch.cat(
+                (data["input_ids"], torch.ones(self.fixed_len - seq_len)))
+            data["attention_mask"] = torch.cat(
+                (data["attention_mask"], torch.zeros(self.fixed_len - seq_len)))
+
         return tuple([data[f][0] for f in self.features])
