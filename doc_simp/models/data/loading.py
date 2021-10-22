@@ -18,6 +18,7 @@ class LazyTensorDataset(Dataset):
         item = self.df.iloc[idx]
         seq = item[self.x_col]
         label = item[self.y_col]
+
+        # NOTE: we're assume this function expects a mini-batch
         data = self.transform([seq], [label])
-        
-        return [data[f] for f in self.features]
+        return tuple([data[f][0] for f in self.features])
