@@ -31,6 +31,8 @@ class LazyTensorDataset(Dataset):
             data["attention_mask"] = torch.cat(
                 (data["attention_mask"][0], torch.zeros(self.fixed_len - seq_len, dtype=int)))
         else:
-            data = {k: v[0][:self.fixed_len] for k, v in data.items()}
+            data = {
+                k: v[0][:self.fixed_len] if v[0].dim() > 0 else v[0] 
+                for k, v in data.items()}
 
         return tuple([data[f] for f in self.features])
