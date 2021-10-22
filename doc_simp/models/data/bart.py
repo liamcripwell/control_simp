@@ -1,3 +1,5 @@
+import os
+
 import numpy as np
 import pandas as pd
 import pytorch_lightning as pl
@@ -64,7 +66,7 @@ class BartDataModule(pl.LightningDataModule):
             self.train['attention_mask'],
             self.train['labels'])
         return DataLoader(dataset, batch_size=self.batch_size, shuffle=True, 
-                            num_workers=4, pin_memory=True)
+                            num_workers=os.cpu_count(), pin_memory=True)
 
     def val_dataloader(self):
         dataset = TensorDataset(
