@@ -20,4 +20,4 @@ class LazyTensorDataset(Dataset):
         label = item[self.y_col]
         data = self.transform([seq], [label])
         
-        return torch.Tensor([data[f] for f in self.features])
+        return [data[f] for f in self.features]
