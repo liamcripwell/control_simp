@@ -58,11 +58,11 @@ class BertDataModule(pl.LightningDataModule):
     def build_datasets(self):
         if self.hparams.lazy_loading:
             self.train = LazyTensorDataset(
-                self.train, self.x_col, self.y_col, ["input_ids", "attention_mask"], self.preprocess, self.MAX_LEN)
+                self.train, self.x_col, self.y_col, ["input_ids", "attention_mask", "labels"], self.preprocess, self.MAX_LEN)
             self.validate = LazyTensorDataset(
-                self.validate, self.x_col, self.y_col, ["input_ids", "attention_mask"], self.preprocess, self.MAX_LEN)
+                self.validate, self.x_col, self.y_col, ["input_ids", "attention_mask", "labels"], self.preprocess, self.MAX_LEN)
             self.test = LazyTensorDataset(
-                self.validate, self.x_col, self.y_col, ["input_ids", "attention_mask"], self.preprocess, self.MAX_LEN)
+                self.validate, self.x_col, self.y_col, ["input_ids", "attention_mask", "labels"], self.preprocess, self.MAX_LEN)
         else:
             # tokenize all data
             self.train = self.build_tensor_dataset(self.preprocess(
