@@ -33,4 +33,4 @@ class LazyTensorDataset(Dataset):
         else:
             data = {k: v[0] for k, v in data.items()}
 
-        return tuple([data[f][0] for f in self.features])
+        return tuple([data[f] for f in self.features])
