@@ -189,6 +189,7 @@ class LightningBert(pl.LightningModule):
         parser.add_argument("--model_type", type=str, default="roberta", required=False,)
         parser.add_argument("--x_col", type=str, default="x", required=False,)
         parser.add_argument("--y_col", type=str, default="y", required=False,)
+        parser.add_argument("--lazy_loading", action="store_true", default=False)
         parser.add_argument("--train_check_interval", type=float, default=0.20)
         parser.add_argument("--freeze_encoder", action="store_true")
         parser.add_argument("--freeze_embeds", action="store_true")
