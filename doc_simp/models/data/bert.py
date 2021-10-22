@@ -5,6 +5,7 @@ import pytorch_lightning as pl
 from torch.utils.data import DataLoader, TensorDataset
 
 from doc_simp.utils import TokenFilter
+from doc_simp.models.data.loading import LazyTensorDataset
 
 
 class BertDataModule(pl.LightningDataModule):
@@ -52,64 +53,48 @@ class BertDataModule(pl.LightningDataModule):
             self.train = self.data
             self.test = self.data[:12] # arbitrarily have 12 test samples as precaution
 
-        # tokenize datasets
-        self.train = self.preprocess(
-            list(
-                self.train[self.x_col]), list(
-                self.train[self.y_col]))
-        self.validate = self.preprocess(
-            list(
-                self.validate[self.x_col]), list(
-                self.validate[self.y_col]))
-        self.test = self.preprocess(
-            list(
-                self.test[self.x_col]), list(
-                self.test[self.y_col]))
+        self.build_datasets()
+
+    def build_datasets(self):
+        if self.hparams.lazy_loading:
+            # create lazy dataset that tokenizes as samples are accessed
+            self.train = LazyTensorDataset(
+                self.train, self.x_col, self.y_col, ["input_ids", "attention_mask", "labels"], self.preprocess, self.MAX_LEN)
+            self.validate = LazyTensorDataset(
+                self.validate, self.x_col, self.y_col, ["input_ids", "attention_mask", "labels"], self.preprocess, self.MAX_LEN)
+            self.test = LazyTensorDataset(
+                self.validate, self.x_col, self.y_col, ["input_ids", "attention_mask", "labels"], self.preprocess, self.MAX_LEN)
+        else:
+            # tokenize all data
+            self.train = self.build_tensor_dataset(self.preprocess(
+                list(self.train[self.x_col]), list(self.train[self.y_col])))
+            self.validate = self.build_tensor_dataset(self.preprocess(
+                list(self.validate[self.x_col]), list(self.validate[self.y_col])))
+            self.test = self.build_tensor_dataset(self.preprocess(
+                list(self.test[self.x_col]), list(self.test[self.y_col])))
+            
+    def build_tensor_dataset(self, data):
+        if self.model_type == "roberta":
+            dataset = TensorDataset(
+                data['input_ids'],
+                data['attention_mask'],
+                data['labels'])
+        else:
+            dataset = TensorDataset(
+                data['input_ids'],
+                data['attention_mask'],
+                data['token_type_ids'],
+                data['labels'])
+        return dataset
 
     def train_dataloader(self):
-        if self.model_type == "roberta":
-            dataset = TensorDataset(
-                self.train['input_ids'],
-                self.train['attention_mask'],
-                self.train['labels'])
-        else:
-            dataset = TensorDataset(
-                self.train['input_ids'],
-                self.train['attention_mask'],
-                self.train['token_type_ids'],
-                self.train['labels'])
-        train_data = DataLoader(dataset, batch_size=self.batch_size, shuffle=True, num_workers=4, pin_memory=True)
-        return train_data
+        return DataLoader(self.train, batch_size=self.batch_size, shuffle=True, num_workers=4, pin_memory=True)
 
     def val_dataloader(self):
-        if self.model_type == "roberta":
-            dataset = TensorDataset(
-                self.validate['input_ids'],
-                self.validate['attention_mask'],
-                self.validate['labels'])
-        else:
-            dataset = TensorDataset(
-                self.validate['input_ids'],
-                self.validate['attention_mask'],
-                self.validate['token_type_ids'],
-                self.validate['labels'])
-        val_data = DataLoader(dataset, batch_size=self.batch_size, num_workers=1, pin_memory=True)
-        return val_data
+        return DataLoader(self.validate, batch_size=self.batch_size, num_workers=1, pin_memory=True)
 
     def test_dataloader(self):
-        if self.model_type == "roberta":
-            dataset = TensorDataset(
-                self.test['input_ids'],
-                self.test['attention_mask'],
-                self.test['labels'])
-        else:
-            dataset = TensorDataset(
-                self.test['input_ids'],
-                self.test['attention_mask'],
-                self.test['token_type_ids'],
-                self.test['labels'])
-        test_data = DataLoader(dataset, batch_size=self.batch_size, num_workers=1, pin_memory=True)
-        return test_data
+        return DataLoader(self.test, batch_size=self.batch_size, num_workers=1, pin_memory=True)
 
     def preprocess(self, seqs, labels=None):
         seqs = TokenFilter(max_len=self.MAX_LEN, blacklist=["<SEP>"])(seqs)
