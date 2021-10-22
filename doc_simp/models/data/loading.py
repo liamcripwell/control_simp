@@ -24,11 +24,11 @@ class LazyTensorDataset(Dataset):
         data = self.transform([seq], [label])
 
         # pad to a fixed length to avoid dim issues when batching
-        seq_len = len(data["input_ids"])
+        seq_len = len(data["input_ids"][0])
         if seq_len < self.fixed_len:
-            data["input_ids"] = torch.cat(
-                (data["input_ids"], torch.ones(self.fixed_len - seq_len)))
-            data["attention_mask"] = torch.cat(
-                (data["attention_mask"], torch.zeros(self.fixed_len - seq_len)))
+            data["input_ids"][0] = torch.cat(
+                (data["input_ids"][0], torch.ones(self.fixed_len - seq_len)))
+            data["attention_mask"][0] = torch.cat(
+                (data["attention_mask"][0], torch.zeros(self.fixed_len - seq_len)))
 
         return tuple([data[f][0] for f in self.features])
