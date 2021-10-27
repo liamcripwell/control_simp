@@ -1,6 +1,7 @@
 import itertools
 from typing import Callable, Iterable, List
 
+import numpy as np
 from torch import nn
 from sacrebleu import corpus_bleu
 
@@ -42,7 +43,7 @@ class TokenFilter():
         self.blacklist = blacklist
 
     def __call__(self, seqs) -> str:
-        if not isinstance(seqs, List): seqs = [seqs]
+        if not isinstance(seqs, List): seqs = np.array([seqs])
 
         for i in range(len(seqs)):
             buff = []
