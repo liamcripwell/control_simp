@@ -1,5 +1,4 @@
 import torch
-import numpy as np
 import pandas as pd
 from torch.utils.data import Dataset
 
@@ -44,4 +43,4 @@ class LazyTensorDataset(Dataset):
                 k: v[:self.fixed_len] if v.dim() > 0 else v
                 for k, v in data.items()})
 
-        return data
+        return torch.stack([data[f] for f in self.features])
