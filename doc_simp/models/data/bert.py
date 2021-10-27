@@ -102,10 +102,10 @@ class BertDataModule(pl.LightningDataModule):
         seqs = TokenFilter(max_len=self.MAX_LEN, blacklist=["<SEP>"])(seqs)
         padded_sequences = self.tokenizer(seqs, padding=True, truncation=True)
 
-        data = {
+        data = pd.Series({
             "input_ids": torch.tensor(padded_sequences["input_ids"]),
             "attention_mask": torch.tensor(padded_sequences["attention_mask"]),
-        }
+        })
         
         if self.model_type != "roberta":
             data["token_type_ids"] = torch.tensor(padded_sequences["token_type_ids"])

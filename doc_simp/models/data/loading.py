@@ -1,4 +1,5 @@
 import torch
+import numpy as np
 from torch.utils.data import Dataset
 
 
@@ -26,7 +27,7 @@ class LazyTensorDataset(Dataset):
 
         # NOTE: we're assume this function expects a mini-batch so we wrap 
         # inputs in a list and later extract the 0th index item
-        data = self.transform([seq], [label])
+        data = self.transform(np.array([seq]), np.array([label]))
 
         # adjust to fixed length tensors to avoid dim issues when batching
         seq_len = len(data["input_ids"][0])
@@ -37,8 +38,8 @@ class LazyTensorDataset(Dataset):
                 (data["attention_mask"][0], torch.zeros(self.fixed_len - seq_len, dtype=int)))
             data["labels"] = data["labels"][0]
         else:
-            data = {
+            data = pd.Series({
                 k: v[0][:self.fixed_len] if v[0].dim() > 0 else v[0] 
-                for k, v in data.items()}
+                for k, v in data.items()})
 
-        return tuple([data[f] for f in self.features])
+        return np.array([data[f] for f in self.features])
