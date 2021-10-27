@@ -25,8 +25,9 @@ class LazyTensorDataset(Dataset):
         seq = item[self.x_col]
         label = item[self.y_col]
 
-        # NOTE: we're assume this function expects a mini-batch so we wrap 
-        # inputs in a list and later extract the 0th index item
+        # NOTE: we don't use any lists or dicts in this object because it
+        # can lead to memory consumption issues when using distributed training.
+        # See https://github.com/pytorch/pytorch/issues/13246
         data = self.transform(np.array([seq]), np.array([label]))
 
         # adjust to fixed length tensors to avoid dim issues when batching
