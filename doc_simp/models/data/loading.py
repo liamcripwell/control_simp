@@ -38,8 +38,10 @@ class LazyTensorDataset(Dataset):
             data["attention_mask"] = torch.cat(
                 (data["attention_mask"], torch.zeros(self.fixed_len - seq_len, dtype=int)))
             data["labels"] = torch.cat(
-                (data["labels"], torch.zeros(self.fixed_len - 1, dtype=int))
+                (data["labels"], torch.zeros(self.fixed_len - seq_len - 1, dtype=int)))
         else:
+            data["labels"] = torch.cat(
+                (data["labels"], torch.zeros(self.fixed_len - 1, dtype=int))
             data = pd.Series({
                 k: v[:self.fixed_len] if v.dim() > 0 else v
                 for k, v in data.items()})

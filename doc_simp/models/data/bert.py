@@ -111,6 +111,6 @@ class BertDataModule(pl.LightningDataModule):
             data["token_type_ids"] = torch.tensor(padded_sequences["token_type_ids"])
 
         if labels is not None:
-            data["labels"] = torch.tensor(labels)
+            data["labels"] = torch.tensor([labels])
 
         return data
