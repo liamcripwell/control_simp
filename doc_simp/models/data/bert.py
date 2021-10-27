@@ -1,5 +1,3 @@
-import os
-
 import torch
 import numpy as np
 import pandas as pd
@@ -29,6 +27,7 @@ class BertDataModule(pl.LightningDataModule):
             self.train_split = self.hparams.train_split  # default split will be 90/5/5
             self.val_split = min(self.hparams.val_split, 1 - self.train_split)
             self.val_file = self.hparams.val_file
+            self.train_workers = self.hparams.train_workers
 
             self.model_type = self.hparams.model_type
 
@@ -90,7 +89,7 @@ class BertDataModule(pl.LightningDataModule):
         return dataset
 
     def train_dataloader(self):
-        return DataLoader(self.train, batch_size=self.batch_size, shuffle=True, num_workers=os.cpu_count(), pin_memory=True)
+        return DataLoader(self.train, batch_size=self.batch_size, shuffle=True, num_workers=self.train_workers, pin_memory=True)
 
     def val_dataloader(self):
         return DataLoader(self.validate, batch_size=self.batch_size, num_workers=1, pin_memory=True)

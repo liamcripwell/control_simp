@@ -197,6 +197,7 @@ class LightningBert(pl.LightningModule):
         parser.add_argument("--lr_scheduler", action="store_true")
         parser.add_argument("--log_class_acc", action="store_true", default=False)
         parser.add_argument("--batch_size", type=int, default=16)
+        parser.add_argument("--train_workers", type=int, default=8)
         parser.add_argument("--data_file", type=str, default=None, required=True)
         parser.add_argument("--data_file2", type=str, default=None, required=False)
         parser.add_argument("--max_samples", type=int, default=-1)
