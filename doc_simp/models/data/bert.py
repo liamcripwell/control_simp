@@ -99,7 +99,7 @@ class BertDataModule(pl.LightningDataModule):
         return DataLoader(self.test, batch_size=self.batch_size, num_workers=1, pin_memory=True)
 
     def preprocess(self, seqs, labels=None):
-        seqs = TokenFilter(max_len=self.MAX_LEN, blacklist=["<SEP>"])(seqs)
+        # seqs = TokenFilter(max_len=self.MAX_LEN, blacklist=["<SEP>"])(seqs)
         padded_sequences = self.tokenizer(seqs, padding=True, truncation=True)
 
         data = pd.Series({

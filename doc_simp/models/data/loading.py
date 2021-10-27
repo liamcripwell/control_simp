@@ -1,5 +1,6 @@
 import torch
 import numpy as np
+import pandas as pd
 from torch.utils.data import Dataset
 
 
@@ -28,19 +29,19 @@ class LazyTensorDataset(Dataset):
         # NOTE: we don't use any lists or dicts in this object because it
         # can lead to memory consumption issues when using distributed training.
         # See https://github.com/pytorch/pytorch/issues/13246
-        data = self.transform(np.array([seq]), np.array([label]))
+        data = self.transform(seq, label)
 
         # adjust to fixed length tensors to avoid dim issues when batching
-        seq_len = len(data["input_ids"][0])
+        seq_len = len(data["input_ids"])
         if seq_len < self.fixed_len:
             data["input_ids"] = torch.cat(
-                (data["input_ids"][0], torch.ones(self.fixed_len - seq_len, dtype=int)))
+                (data["input_ids"], torch.ones(self.fixed_len - seq_len, dtype=int)))
             data["attention_mask"] = torch.cat(
-                (data["attention_mask"][0], torch.zeros(self.fixed_len - seq_len, dtype=int)))
-            data["labels"] = data["labels"][0]
+                (data["attention_mask"], torch.zeros(self.fixed_len - seq_len, dtype=int)))
+            data["labels"] = data["labels"]
         else:
             data = pd.Series({
-                k: v[0][:self.fixed_len] if v[0].dim() > 0 else v[0] 
+                k: v[:self.fixed_len] if v.dim() > 0 else v
                 for k, v in data.items()})
 
-        return np.array([data[f] for f in self.features])
+        return data

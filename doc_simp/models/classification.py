@@ -93,7 +93,7 @@ class LightningBert(pl.LightningModule):
         return self.model(input_ids, **kwargs)
 
     def training_step(self, batch, batch_idx):
-        _batch = {INPUTS[self.model_type][i] : batch[i] for i in range(len(batch))}
+        _batch = batch
         output = self.model(**_batch, return_dict=True)
 
         loss, _ = extract_results(output)
@@ -110,7 +110,7 @@ class LightningBert(pl.LightningModule):
         return output
 
     def validation_step(self, batch, batch_idx):
-        _batch = {INPUTS[self.model_type][i] : batch[i] for i in range(len(batch))}
+        _batch = batch
         output = self.model(**_batch, return_dict=True)
         loss, logits = extract_results(output)
 
