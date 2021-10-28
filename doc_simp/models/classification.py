@@ -81,11 +81,8 @@ class LightningBert(pl.LightningModule):
         self.hparams = hparams
         self.learning_rate = self.hparams.learning_rate
         self.use_lr_scheduler = self.hparams.lr_scheduler
-
-        self.train_check_interval = math.ceil(self.hparams.train_check_interval * self.trainer.num_training_batches)
-        self.sys_log_interval = math.ceil(self.hparams.sys_log_interval * self.trainer.num_training_batches)
-        if self.sys_log_interval == 0.0:
-            self.sys_log_interval = None
+        self.train_check_interval = self.hparams.train_check_interval
+        self.sys_log_interval = self.hparams.sys_log_interval
 
         self.num_labels = num_labels
         if "log_class_acc" not in self.hparams:
@@ -106,15 +103,17 @@ class LightningBert(pl.LightningModule):
 
         output = {"loss": loss}
 
-        # wandb log
+        # wandb logging
         self.train_losses.append(loss)
-        if batch_idx % self.train_check_interval == 0:
+        train_inter = math.ceil(self.train_check_interval * self.trainer.num_training_batches)
+        if batch_idx % train_inter == 0:
             avg_loss = torch.stack(self.train_losses).mean()
             self.logger.experiment.log({
                 'train_loss': avg_loss
             })
             self.train_losses = []
-        if self.sys_log_interval is not None and batch_idx % self.sys_log_interval == 0:
+        sys_inter = math.ceil(self.sys_log_interval * self.trainer.num_training_batches)
+        if sys_inter > 0 and batch_idx % sys_inter == 0:
             self.logger.experiment.log({
                 'cpu_memory_use': psutil.virtual_memory().percent
             })
