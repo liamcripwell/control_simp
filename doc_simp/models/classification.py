@@ -82,6 +82,11 @@ class LightningBert(pl.LightningModule):
         self.learning_rate = self.hparams.learning_rate
         self.use_lr_scheduler = self.hparams.lr_scheduler
 
+        self.train_check_interval = math.ceil(self.hparams.train_check_interval * self.trainer.num_training_batches)
+        self.sys_log_interval = math.ceil(self.hparams.sys_log_interval * self.trainer.num_training_batches)
+        if self.sys_log_interval == 0.0:
+            self.sys_log_interval = None
+
         self.num_labels = num_labels
         if "log_class_acc" not in self.hparams:
             self.log_class_acc = False
@@ -103,13 +108,16 @@ class LightningBert(pl.LightningModule):
 
         # wandb log
         self.train_losses.append(loss)
-        if batch_idx % math.ceil(self.hparams.train_check_interval * self.trainer.num_training_batches) == 0:
+        if batch_idx % self.train_check_interval == 0:
             avg_loss = torch.stack(self.train_losses).mean()
             self.logger.experiment.log({
-                'train_loss': avg_loss,
-                'cpu_memory_use': psutil.virtual_memory().percent
+                'train_loss': avg_loss
             })
             self.train_losses = []
+        if self.sys_log_interval is not None and batch_idx % self.sys_log_interval == 0:
+            self.logger.experiment.log({
+                'cpu_memory_use': psutil.virtual_memory().percent
+            })
 
         return output
 
@@ -195,6 +203,7 @@ class LightningBert(pl.LightningModule):
         parser.add_argument("--y_col", type=str, default="y", required=False,)
         parser.add_argument("--lazy_loading", action="store_true", default=False)
         parser.add_argument("--train_check_interval", type=float, default=0.20)
+        parser.add_argument("--sys_log_interval", type=float, default=0.0)
         parser.add_argument("--freeze_encoder", action="store_true")
         parser.add_argument("--freeze_embeds", action="store_true")
         parser.add_argument("--learning_rate", type=float, default=2e-5)
