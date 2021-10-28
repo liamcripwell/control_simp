@@ -1,4 +1,5 @@
 import math
+import psutil
 import argparse
 
 import torch
@@ -104,7 +105,10 @@ class LightningBert(pl.LightningModule):
         self.train_losses.append(loss)
         if batch_idx % math.ceil(self.hparams.train_check_interval * self.trainer.num_training_batches) == 0:
             avg_loss = torch.stack(self.train_losses).mean()
-            self.logger.experiment.log({'train_loss': avg_loss})
+            self.logger.experiment.log({
+                'train_loss': avg_loss,
+                'cpu_memory_use': psutil.virtual_memory().percent
+            })
             self.train_losses = []
 
         return output
