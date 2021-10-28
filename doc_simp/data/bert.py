@@ -5,7 +5,7 @@ import pytorch_lightning as pl
 from torch.utils.data import DataLoader, TensorDataset
 
 from doc_simp.utils import TokenFilter
-from doc_simp.models.data.loading import LazyTensorDataset
+from doc_simp.data.loading import LazyTensorDataset
 
 
 class BertDataModule(pl.LightningDataModule):
