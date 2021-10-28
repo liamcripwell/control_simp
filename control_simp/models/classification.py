@@ -8,7 +8,7 @@ import pytorch_lightning as pl
 from torch.utils.data import DataLoader, TensorDataset
 from transformers import BertTokenizer, AdamW, BertForSequenceClassification, RobertaTokenizer, RobertaForSequenceClassification
 
-from doc_simp.data.bert import BertDataModule
+from control_simp.data.bert import BertDataModule
 
 
 INPUTS = {

@@ -8,7 +8,7 @@ import numpy as np
 import pytorch_lightning as pl
 from transformers import BartTokenizer, BartForConditionalGeneration
 
-from doc_simp.utils import freeze_params, freeze_embeds, lmap, calculate_bleu
+from control_simp.utils import freeze_params, freeze_embeds, lmap, calculate_bleu
 
 
 class BartFinetuner(pl.LightningModule):

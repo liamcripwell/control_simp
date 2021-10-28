@@ -3,10 +3,10 @@ import argparse
 import pytorch_lightning as pl
 from pytorch_lightning.loggers import WandbLogger
 
-from doc_simp.data.bart import BartDataModule
-from doc_simp.data.bert import BertDataModule
-from doc_simp.models.end_to_end import BartFinetuner
-from doc_simp.models.classification import LightningBert
+from control_simp.data.bart import BartDataModule
+from control_simp.data.bert import BertDataModule
+from control_simp.models.end_to_end import BartFinetuner
+from control_simp.models.classification import LightningBert
 
 ARCHS = {
     "bart": {

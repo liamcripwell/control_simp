@@ -4,8 +4,8 @@ import pandas as pd
 import pytorch_lightning as pl
 from torch.utils.data import DataLoader, TensorDataset
 
-from doc_simp.utils import TokenFilter
-from doc_simp.data.loading import LazyTensorDataset
+from control_simp.utils import TokenFilter
+from control_simp.data.loading import LazyTensorDataset
 
 
 class BertDataModule(pl.LightningDataModule):

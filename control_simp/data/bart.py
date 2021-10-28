@@ -5,7 +5,7 @@ import pandas as pd
 import pytorch_lightning as pl
 from torch.utils.data import DataLoader, TensorDataset
 
-from doc_simp.utils import TokenFilter
+from control_simp.utils import TokenFilter
 
 
 class BartDataModule(pl.LightningDataModule):
