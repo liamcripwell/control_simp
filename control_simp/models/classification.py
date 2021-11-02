@@ -51,9 +51,10 @@ def pretokenize(model, data, x_col, y_col, max_samples=None, chunk_size=5):
     dm = BertDataModule(model.tokenizer, hparams=model.hparams)
     for i, chunk in enumerate(np.array_split(data, chunk_count)):
         tokd = dm.preprocess(list(chunk[x_col]))
-        for _, row in chunk.iterrows():
-            x = tokd[i]["input_ids"]
+        for j, row in chunk.iterrows():
+            x = tokd["input_ids"][j]
             torch.save(x, f"tensys/{row.index}.pt")
+            print(f"{row.index}\n{row.complex}\n{x}\n")
 
 def extract_results(output):
     if type(output) is tuple:
@@ -96,7 +97,7 @@ class LightningBert(pl.LightningModule):
         self.learning_rate = self.hparams.learning_rate
         self.use_lr_scheduler = self.hparams.lr_scheduler
         self.train_check_interval = self.hparams.train_check_interval
-        self.sys_log_interval = self.hparams.sys_log_interval
+        # self.sys_log_interval = self.hparams.sys_log_interval
 
         self.num_labels = num_labels
         if "log_class_acc" not in self.hparams:
