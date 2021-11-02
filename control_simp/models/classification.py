@@ -47,14 +47,15 @@ def pretokenize(model, data, x_col, y_col, max_samples=None, chunk_size=5):
         data = data[:max_samples]
 
     chunk_count = int(len(data)/chunk_size)
+    data["idx"] = data.index
 
     dm = BertDataModule(model.tokenizer, hparams=model.hparams)
     for i, chunk in enumerate(np.array_split(data, chunk_count)):
         tokd = dm.preprocess(list(chunk[x_col]))
         for j, row in chunk.iterrows():
             x = tokd["input_ids"][j]
-            torch.save(x, f"tensys/{row.index}.pt")
-            print(f"{row.index}\n{row.complex}\n{x}\n")
+            torch.save(x, f"tensys/{row.idx}.pt")
+            print(f"{row.idx}\n{row.complex}\n{x}\n")
 
 def extract_results(output):
     if type(output) is tuple:
