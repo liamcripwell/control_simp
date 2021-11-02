@@ -42,21 +42,22 @@ def run_classifier(model, test_set, input_col="complex", max_samples=None, devic
     
     return preds
 
-def pretokenize(model, data, x_col, y_col, max_samples=None, chunk_size=5):
+def pretokenize(model, data, x_col, save_dir, max_samples=None, chunk_size=32):
     if max_samples is not None:
         data = data[:max_samples]
 
+    dm = BertDataModule(model.tokenizer, hparams=model.hparams)
+
+    # number of chunks needed
     chunk_count = int(len(data)/chunk_size)+1
 
-    dm = BertDataModule(model.tokenizer, hparams=model.hparams)
     for _, chunk in enumerate(np.array_split(data, chunk_count)):
         tokd = dm.preprocess(list(chunk[x_col]))
         sub_count = 0
         for j, row in chunk.iterrows():
             x = tokd["input_ids"][sub_count]
             sub_count += 1
-            torch.save(x, f"tensys/{j}.pt")
-            print(f"{j}\n{row.complex}\n{x}\n")
+            torch.save(x, f"{save_dir}/{j}.pt")
 
 def extract_results(output):
     if type(output) is tuple:
