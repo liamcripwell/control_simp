@@ -3,6 +3,7 @@ import psutil
 import argparse
 
 import torch
+import numpy as np
 from torch import tensor
 import pytorch_lightning as pl
 from torch.utils.data import DataLoader, TensorDataset
@@ -40,6 +41,19 @@ def run_classifier(model, test_set, input_col="complex", max_samples=None, devic
             preds += logits
     
     return preds
+
+def pretokenize(model, data, x_col, y_col, max_samples=None, chunk_size=5):
+    if max_samples is not None:
+        data = data[:max_samples]
+
+    chunk_count = int(len(data)/chunk_size)
+
+    dm = BertDataModule(model.tokenizer, hparams=model.hparams)
+    for i, chunk in enumerate(np.array_split(data, chunk_count)):
+        tokd = dm.preprocess(list(chunk[x_col]))
+        for _, row in chunk.iterrows():
+            x = tokd[i]["input_ids"]
+            torch.save(x, f"tensys/{row.index}.pt")
 
 def extract_results(output):
     if type(output) is tuple:
