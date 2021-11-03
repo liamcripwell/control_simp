@@ -53,11 +53,14 @@ def pretokenize(model, data, x_col, save_dir, max_samples=None, chunk_size=32):
 
     for _, chunk in enumerate(np.array_split(data, chunk_count)):
         tokd = dm.preprocess(list(chunk[x_col]))
-        sub_count = 0
-        for j, row in chunk.iterrows():
-            x = tokd["input_ids"][sub_count]
-            sub_count += 1
+        i = 0
+        for j, _ in chunk.iterrows():
+            # currently only works for RoBERTa tokenizer
+            a = tokd["input_ids"][i]
+            b = tokd["attention_mask"][i]
+            x = torch.stack([a, b])
             torch.save(x, f"{save_dir}/{j}.pt")
+            i += 1
 
 def extract_results(output):
     if type(output) is tuple:
