@@ -48,7 +48,7 @@ class LazyPreproDataset(Dataset):
 
     def __init__(self, df, data_dir, y_col=None):
         self.df = df
-        self.y_col
+        self.y_col = y_col
         self.dara_dir = data_dir
 
     def __len__(self):
@@ -56,7 +56,7 @@ class LazyPreproDataset(Dataset):
 
     def __getitem__(self, idx):
         tensors = torch.load(f"{self.data_dir}/{idx}.pt")
-        
+
         item = tuple([t for t in tensors])
         if self.y_col is not None:
             item += (torch.tensor(self.df.iloc[idx][self.y_col]),)

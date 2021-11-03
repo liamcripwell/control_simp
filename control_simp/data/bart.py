@@ -7,6 +7,7 @@ import pytorch_lightning as pl
 from torch.utils.data import DataLoader, TensorDataset
 
 from control_simp.utils import TokenFilter
+from control_simp.data.loading import LazyPreproDataset
 
 
 def pretokenize(model, data, save_dir, x_col="complex", y_col="simple", max_samples=None, chunk_size=32):
@@ -45,11 +46,13 @@ class BartDataModule(pl.LightningDataModule):
         self.batch_size = self.hparams.batch_size
         self.data_file = self.hparams.data_file
         self.max_samples = self.hparams.max_samples  # defaults to no restriction
-        self.val_file = self.hparams.val_file
         self.train_split = self.hparams.train_split  # default split will be 90/5/5
         self.val_split = min(self.hparams.val_split, 1-self.train_split)
+        self.val_file = self.hparams.val_file
         self.max_source_length = self.hparams.max_source_length
         self.max_target_length = self.hparams.max_target_length
+        self.train_data_dir = self.hparams.train_data_dir
+        self.valid_data_dir = self.hparams.valid_data_dir
 
     def prepare_data(self):
         # NOTE: shouldn't assign state in here
@@ -77,13 +80,21 @@ class BartDataModule(pl.LightningDataModule):
         self.build_datasets()
 
     def build_datasets(self):
-        # preprocess datasets
-        self.train = self.build_tensor_dataset(self.preprocess(
-            list(self.train[self.x_col]), list(self.train[self.y_col])))
-        self.validate = self.build_tensor_dataset(self.preprocess(
-            list(self.validate[self.x_col]), list(self.validate[self.y_col])))
-        self.test = self.build_tensor_dataset(self.preprocess(
-            list(self.test[self.x_col]), list(self.test[self.y_col])))
+        if self.train_data_dir is None:
+            # preprocess datasets
+            self.train = self.build_tensor_dataset(self.preprocess(
+                list(self.train[self.x_col]), list(self.train[self.y_col])))
+            self.validate = self.build_tensor_dataset(self.preprocess(
+                list(self.validate[self.x_col]), list(self.validate[self.y_col])))
+            self.test = self.build_tensor_dataset(self.preprocess(
+                list(self.test[self.x_col]), list(self.test[self.y_col])))
+        else:
+            self.train = LazyPreproDataset(self.train, self.train_data_dir)
+            if self.val_file is not None:
+                self.validate = LazyPreproDataset(self.validate, self.valid_data_dir)
+            else:
+                self.validate = LazyPreproDataset(self.validate, self.train_data_dir)
+            self.test = LazyPreproDataset(self.test, self.train_data_dir)
 
     def build_tensor_dataset(self, data):
         return TensorDataset(

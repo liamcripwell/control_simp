@@ -247,5 +247,7 @@ class BartFinetuner(pl.LightningModule):
         parser.add_argument("--val_metric", type=str, default=None, required=False,
             choices=["bleu", "rouge2", "loss",None])
         parser.add_argument("--eval_max_gen_length", type=int, default=None)
+        parser.add_argument("--train_data_dir", type=str, default=None, required=False,)
+        parser.add_argument("--valid_data_dir", type=str, default=None, required=False,)
 
         return parser
