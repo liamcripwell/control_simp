@@ -74,38 +74,33 @@ class BartDataModule(pl.LightningDataModule):
             self.train = self.data
             self.test = self.data[:12] # arbitrarily have 12 test samples as precaution
 
+        self.build_datasets()
+
+    def build_datasets(self):
         # preprocess datasets
-        self.train = self.preprocess(
-            list(self.train[self.x_col]), 
-            list(self.train[self.y_col]))
-        self.validate = self.preprocess(
-            list(self.validate[self.x_col]), 
-            list(self.validate[self.y_col]))
-        self.test = self.preprocess(
-            list(self.test[self.x_col]), 
-            list(self.test[self.y_col]))
+        self.train = self.build_tensor_dataset(self.preprocess(
+            list(self.train[self.x_col]), list(self.train[self.y_col])))
+        self.validate = self.build_tensor_dataset(self.preprocess(
+            list(self.validate[self.x_col]), list(self.validate[self.y_col])))
+        self.test = self.build_tensor_dataset(self.preprocess(
+            list(self.test[self.x_col]), list(self.test[self.y_col])))
+
+    def build_tensor_dataset(self, data):
+        return TensorDataset(
+            data['input_ids'],
+            data['attention_mask'],
+            data['labels']
+        )
 
     def train_dataloader(self):
-        dataset = TensorDataset(
-            self.train['input_ids'],
-            self.train['attention_mask'],
-            self.train['labels'])
-        return DataLoader(dataset, batch_size=self.batch_size, shuffle=True, 
+        return DataLoader(self.train, batch_size=self.batch_size, shuffle=True, 
                             num_workers=os.cpu_count(), pin_memory=True)
 
     def val_dataloader(self):
-        dataset = TensorDataset(
-            self.validate['input_ids'],
-            self.validate['attention_mask'],
-            self.validate['labels'])
-        return DataLoader(dataset, batch_size=self.batch_size, num_workers=1, pin_memory=True)
+        return DataLoader(self.validate, batch_size=self.batch_size, num_workers=1, pin_memory=True)
 
     def test_dataloader(self):
-        dataset = TensorDataset(
-            self.test['input_ids'],
-            self.test['attention_mask'],
-            self.test['labels'])
-        return DataLoader(dataset, batch_size=self.batch_size, num_workers=1, pin_memory=True)
+        return DataLoader(self.test, batch_size=self.batch_size, num_workers=1, pin_memory=True)
 
     def preprocess(self, source_sequences, target_sequences, pad_to_max_length=True, return_tensors="pt"):
         """Transforms data into tokenized input/output sequences."""
