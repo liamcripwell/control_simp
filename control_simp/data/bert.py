@@ -102,7 +102,7 @@ class BertDataModule(pl.LightningDataModule):
         tokd_sequences = self.tokenizer(seqs, padding=pad, truncation=True)
 
         # if not padding wrap in a list to maintain differing dims
-        if pad:
+        if not pad:
             input_ids = list(tokd_sequences["input_ids"])
             attention_mask = list(tokd_sequences["attention_mask"])
         else:
