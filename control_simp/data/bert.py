@@ -97,17 +97,17 @@ class BertDataModule(pl.LightningDataModule):
     def test_dataloader(self):
         return DataLoader(self.test, batch_size=self.batch_size, num_workers=1, pin_memory=True)
 
-    def preprocess(self, seqs, labels=None):
+    def preprocess(self, seqs, labels=None, pad=True):
         seqs = TokenFilter(max_len=self.MAX_LEN, blacklist=["<SEP>"])(seqs)
-        padded_sequences = self.tokenizer(seqs, padding=True, truncation=True)
+        tokd_sequences = self.tokenizer(seqs, padding=pad, truncation=True)
 
         data = {
-            "input_ids": torch.tensor(padded_sequences["input_ids"]),
-            "attention_mask": torch.tensor(padded_sequences["attention_mask"]),
+            "input_ids": torch.tensor(tokd_sequences["input_ids"]),
+            "attention_mask": torch.tensor(tokd_sequences["attention_mask"]),
         }
         
         if self.model_type != "roberta":
-            data["token_type_ids"] = torch.tensor(padded_sequences["token_type_ids"])
+            data["token_type_ids"] = torch.tensor(tokd_sequences["token_type_ids"])
 
         if labels is not None:
             data["labels"] = torch.tensor(labels)

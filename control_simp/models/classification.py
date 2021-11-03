@@ -52,7 +52,7 @@ def pretokenize(model, data, x_col, save_dir, max_samples=None, chunk_size=32):
     chunk_count = int(len(data)/chunk_size)+1
 
     for _, chunk in enumerate(np.array_split(data, chunk_count)):
-        tokd = dm.preprocess(list(chunk[x_col]))
+        tokd = dm.preprocess(list(chunk[x_col]), pad=False)
         i = 0
         for j, _ in chunk.iterrows():
             # currently only works for RoBERTa tokenizer
