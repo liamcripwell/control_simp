@@ -101,9 +101,17 @@ class BertDataModule(pl.LightningDataModule):
         seqs = TokenFilter(max_len=self.MAX_LEN, blacklist=["<SEP>"])(seqs)
         tokd_sequences = self.tokenizer(seqs, padding=pad, truncation=True)
 
+        # if not padding wrap in a list to maintain differing dims
+        if pad:
+            input_ids = list(tokd_sequences["input_ids"])
+            attention_mask = list(tokd_sequences["attention_mask"])
+        else:
+            input_ids = torch.tensor(tokd_sequences["input_ids"])
+            attention_mask = torch.tensor(tokd_sequences["attention_mask"])
+
         data = {
-            "input_ids": torch.tensor(tokd_sequences["input_ids"]),
-            "attention_mask": torch.tensor(tokd_sequences["attention_mask"]),
+            "input_ids": input_ids,
+            "attention_mask": attention_mask,
         }
         
         if self.model_type != "roberta":

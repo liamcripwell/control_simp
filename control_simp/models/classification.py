@@ -1,3 +1,4 @@
+import os
 import math
 import psutil
 import argparse
@@ -45,6 +46,9 @@ def run_classifier(model, test_set, input_col="complex", max_samples=None, devic
 def pretokenize(model, data, x_col, save_dir, max_samples=None, chunk_size=32):
     if max_samples is not None:
         data = data[:max_samples]
+
+    if not os.path.isdir(save_dir):
+        os.mkdir(save_dir)
 
     dm = BertDataModule(model.tokenizer, hparams=model.hparams)
 
