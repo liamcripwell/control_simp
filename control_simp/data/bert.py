@@ -7,7 +7,7 @@ import pytorch_lightning as pl
 from torch.utils.data import DataLoader, TensorDataset
 
 from control_simp.utils import TokenFilter
-from control_simp.data.loading import LazyTensorDataset
+from control_simp.data.loading import LazyClassifierDataset
 
 
 def pretokenize(model, data, save_dir, x_col="complex", max_samples=None, chunk_size=32):
@@ -85,11 +85,11 @@ class BertDataModule(pl.LightningDataModule):
     def build_datasets(self):
         if self.hparams.lazy_loading:
             # create lazy dataset that tokenizes as samples are accessed
-            self.train = LazyTensorDataset(
+            self.train = LazyClassifierDataset(
                 self.train, self.x_col, self.y_col, ["input_ids", "attention_mask", "labels"], self.preprocess, self.MAX_LEN)
-            self.validate = LazyTensorDataset(
+            self.validate = LazyClassifierDataset(
                 self.validate, self.x_col, self.y_col, ["input_ids", "attention_mask", "labels"], self.preprocess, self.MAX_LEN)
-            self.test = LazyTensorDataset(
+            self.test = LazyClassifierDataset(
                 self.validate, self.x_col, self.y_col, ["input_ids", "attention_mask", "labels"], self.preprocess, self.MAX_LEN)
         else:
             # tokenize all data
