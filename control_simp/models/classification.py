@@ -1,4 +1,3 @@
-import os
 import math
 import psutil
 import argparse

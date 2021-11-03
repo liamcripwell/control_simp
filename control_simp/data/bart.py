@@ -53,6 +53,7 @@ class BartDataModule(pl.LightningDataModule):
         self.max_target_length = self.hparams.max_target_length
         self.train_data_dir = self.hparams.train_data_dir
         self.valid_data_dir = self.hparams.valid_data_dir
+        self.train_workers = self.hparams.train_workers
 
     def prepare_data(self):
         # NOTE: shouldn't assign state in here
@@ -104,8 +105,7 @@ class BartDataModule(pl.LightningDataModule):
         )
 
     def train_dataloader(self):
-        return DataLoader(self.train, batch_size=self.batch_size, shuffle=True, 
-                            num_workers=os.cpu_count(), pin_memory=True)
+        return DataLoader(self.train, batch_size=self.batch_size, shuffle=True, num_workers=self.train_workers, pin_memory=True)
 
     def val_dataloader(self):
         return DataLoader(self.validate, batch_size=self.batch_size, num_workers=1, pin_memory=True)
