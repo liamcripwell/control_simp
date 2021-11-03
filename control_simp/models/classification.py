@@ -60,8 +60,8 @@ def pretokenize(model, data, x_col, save_dir, max_samples=None, chunk_size=32):
         i = 0
         for j, _ in chunk.iterrows():
             # currently only works for RoBERTa tokenizer
-            a = tokd["input_ids"][i]
-            b = tokd["attention_mask"][i]
+            a = tensor(tokd["input_ids"][i])
+            b = tensor(tokd["attention_mask"][i])
             x = torch.stack([a, b])
             torch.save(x, f"{save_dir}/{j}.pt")
             i += 1
