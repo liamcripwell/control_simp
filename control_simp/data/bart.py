@@ -1,11 +1,36 @@
 import os
 
+import torch
 import numpy as np
 import pandas as pd
 import pytorch_lightning as pl
 from torch.utils.data import DataLoader, TensorDataset
 
 from control_simp.utils import TokenFilter
+
+
+def pretokenize(model, data, save_dir, x_col="complex", y_col="simple", max_samples=None, chunk_size=32):
+    if max_samples is not None:
+        data = data[:max_samples]
+
+    if not os.path.isdir(save_dir):
+        os.mkdir(save_dir)
+
+    dm = BartDataModule(model.tokenizer, hparams=model.hparams)
+
+    # number of chunks needed
+    chunk_count = int(len(data)/chunk_size)+1
+
+    for _, chunk in enumerate(np.array_split(data, chunk_count)):
+        tokd = dm.preprocess(list(chunk[x_col]), list(chunk[y_col]), pad_to_max_length=False)
+        i = 0
+        for j, _ in chunk.iterrows():
+            a = torch.tensor(tokd["input_ids"][i])
+            b = torch.tensor(tokd["attention_mask"][i])
+            c = torch.tensor(tokd["labels"][i])
+            x = torch.stack([a, b, c])
+            torch.save(x, f"{save_dir}/{j}.pt")
+            i += 1
 
 
 class BartDataModule(pl.LightningDataModule):
@@ -85,6 +110,7 @@ class BartDataModule(pl.LightningDataModule):
     def preprocess(self, source_sequences, target_sequences, pad_to_max_length=True, return_tensors="pt"):
         """Transforms data into tokenized input/output sequences."""
         source_sequences = TokenFilter(max_len=self.max_source_length, blacklist=["<SEP>"])(source_sequences)
+        target_sequences = TokenFilter(max_len=self.max_target_length, blacklist=["<SEP>"])(target_sequences)
 
         transformed_x = self.tokenizer(source_sequences, max_length=self.max_source_length,
                             padding=pad_to_max_length, truncation=True, 

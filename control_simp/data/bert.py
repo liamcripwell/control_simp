@@ -1,3 +1,5 @@
+import os
+
 import torch
 import numpy as np
 import pandas as pd
@@ -6,6 +8,30 @@ from torch.utils.data import DataLoader, TensorDataset
 
 from control_simp.utils import TokenFilter
 from control_simp.data.loading import LazyTensorDataset
+
+
+def pretokenize(model, data, save_dir, x_col="complex", max_samples=None, chunk_size=32):
+    if max_samples is not None:
+        data = data[:max_samples]
+
+    if not os.path.isdir(save_dir):
+        os.mkdir(save_dir)
+
+    dm = BertDataModule(model.tokenizer, hparams=model.hparams)
+
+    # number of chunks needed
+    chunk_count = int(len(data)/chunk_size)+1
+
+    for _, chunk in enumerate(np.array_split(data, chunk_count)):
+        tokd = dm.preprocess(list(chunk[x_col]), pad=False)
+        i = 0
+        for j, _ in chunk.iterrows():
+            # currently only works for RoBERTa tokenizer
+            a = torch.tensor(tokd["input_ids"][i])
+            b = torch.tensor(tokd["attention_mask"][i])
+            x = torch.stack([a, b])
+            torch.save(x, f"{save_dir}/{j}.pt")
+            i += 1
 
 
 class BertDataModule(pl.LightningDataModule):

@@ -4,7 +4,6 @@ import psutil
 import argparse
 
 import torch
-import numpy as np
 from torch import tensor
 import pytorch_lightning as pl
 from torch.utils.data import DataLoader, TensorDataset
@@ -42,29 +41,6 @@ def run_classifier(model, test_set, input_col="complex", max_samples=None, devic
             preds += logits
     
     return preds
-
-def pretokenize(model, data, x_col, save_dir, max_samples=None, chunk_size=32):
-    if max_samples is not None:
-        data = data[:max_samples]
-
-    if not os.path.isdir(save_dir):
-        os.mkdir(save_dir)
-
-    dm = BertDataModule(model.tokenizer, hparams=model.hparams)
-
-    # number of chunks needed
-    chunk_count = int(len(data)/chunk_size)+1
-
-    for _, chunk in enumerate(np.array_split(data, chunk_count)):
-        tokd = dm.preprocess(list(chunk[x_col]), pad=False)
-        i = 0
-        for j, _ in chunk.iterrows():
-            # currently only works for RoBERTa tokenizer
-            a = tensor(tokd["input_ids"][i])
-            b = tensor(tokd["attention_mask"][i])
-            x = torch.stack([a, b])
-            torch.save(x, f"{save_dir}/{j}.pt")
-            i += 1
 
 def extract_results(output):
     if type(output) is tuple:
