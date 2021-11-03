@@ -4,6 +4,7 @@ import torch
 import numpy as np
 import pandas as pd
 import pytorch_lightning as pl
+from torch.nn.utils.rnn import pad_sequence
 from torch.utils.data import DataLoader, TensorDataset
 
 from control_simp.utils import TokenFilter
@@ -33,6 +34,15 @@ def pretokenize(model, data, save_dir, x_col="complex", y_col="simple", max_samp
             torch.save(x, f"{save_dir}/{j}.pt")
             i += 1
 
+def pad_collate(batch):
+    (xx, mm, yy) = zip(*batch)
+
+    xx_pad = pad_sequence(xx, batch_first=True, padding_value=1)
+    mm_pad = pad_sequence(mm, batch_first=True, padding_value=0)
+    yy_pad = pad_sequence(yy, batch_first=True, padding_value=1)
+
+    return xx_pad, mm_pad, yy_pad
+
 
 class BartDataModule(pl.LightningDataModule):
     def __init__(self, tokenizer, hparams):
@@ -54,6 +64,7 @@ class BartDataModule(pl.LightningDataModule):
         self.train_data_dir = self.hparams.train_data_dir
         self.valid_data_dir = self.hparams.valid_data_dir
         self.train_workers = self.hparams.train_workers
+        self.collate_fn = pad_collate if self.train_data_dir is not None else None
 
     def prepare_data(self):
         # NOTE: shouldn't assign state in here
@@ -105,13 +116,16 @@ class BartDataModule(pl.LightningDataModule):
         )
 
     def train_dataloader(self):
-        return DataLoader(self.train, batch_size=self.batch_size, shuffle=True, num_workers=self.train_workers, pin_memory=True)
+        return DataLoader(self.train, batch_size=self.batch_size, shuffle=True, num_workers=self.train_workers, 
+                            pin_memory=True, collate_fn=self.collate_fn)
 
     def val_dataloader(self):
-        return DataLoader(self.validate, batch_size=self.batch_size, num_workers=1, pin_memory=True)
+        return DataLoader(self.validate, batch_size=self.batch_size, num_workers=1, 
+                            pin_memory=True, collate_fn=self.collate_fn)
 
     def test_dataloader(self):
-        return DataLoader(self.test, batch_size=self.batch_size, num_workers=1, pin_memory=True)
+        return DataLoader(self.test, batch_size=self.batch_size, num_workers=1, 
+                            pin_memory=True, collate_fn=self.collate_fn)
 
     def preprocess(self, source_sequences, target_sequences, pad_to_max_length=True, return_tensors="pt"):
         """Transforms data into tokenized input/output sequences."""
