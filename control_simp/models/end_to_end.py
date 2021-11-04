@@ -81,10 +81,11 @@ class BartFinetuner(pl.LightningModule):
             self.logger.experiment.log({'train_loss': avg_loss})
             self.train_losses = []
 
-        if batch_idx % int(self.hparams.sys_log_interval * self.trainer.num_training_batches) == 0:
-            self.logger.experiment.log({
-                'cpu_memory_use': psutil.virtual_memory().percent
-            })
+        if self.hparams.sys_log_interval > 0:
+            if batch_idx % int(self.hparams.sys_log_interval * self.trainer.num_training_batches) == 0:
+                self.logger.experiment.log({
+                    'cpu_memory_use': psutil.virtual_memory().percent
+                })
 
         return {"loss": loss_tensors[0]} #, "log": logs}
 
