@@ -55,10 +55,12 @@ class LazyPreproDataset(Dataset):
         return len(self.df)
 
     def __getitem__(self, idx):
-        tensors = torch.load(f"{self.data_dir}/{idx}.pt")
-
+        tensors = torch.load(f"{self.data_dir}/{idx}_x.pt")
         item = tuple([t for t in tensors])
+
         if self.y_col is not None:
             item += (torch.tensor(self.df.iloc[idx][self.y_col]),)
+        else:
+            item += (torch.load(f"{self.data_dir}/{idx}_y.pt"),)
 
         return item

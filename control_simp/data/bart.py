@@ -29,9 +29,10 @@ def pretokenize(model, data, save_dir, x_col="complex", y_col="simple", max_samp
         for j, _ in chunk.iterrows():
             a = torch.tensor(tokd["input_ids"][i])
             b = torch.tensor(tokd["attention_mask"][i])
-            c = torch.tensor(tokd["labels"][i])
-            x = torch.stack([a, b, c])
-            torch.save(x, f"{save_dir}/{j}.pt")
+            x = torch.stack([a, b])
+            y = torch.tensor(tokd["labels"][i])
+            torch.save(x, f"{save_dir}/{j}_x.pt")
+            torch.save(y, f"{save_dir}/{j}_y.pt")
             i += 1
 
 def pad_collate(batch):
