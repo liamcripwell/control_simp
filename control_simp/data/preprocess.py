@@ -9,7 +9,7 @@ from control_simp.data.bert import pretokenize as bert_pretok
 
 class Launcher(object):
 
-    def bart(model, data_file, output_dir, x_col, y_col, max_samples):
+    def bart(self, model, data_file, output_dir, x_col, y_col, max_samples):
         df = pd.read_csv(data_file)
         bart_pretok(model, df, output_dir, x_col, y_col, max_samples)
         meta = {
