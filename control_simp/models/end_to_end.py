@@ -36,7 +36,7 @@ class BartFinetuner(pl.LightningModule):
         if hparams is None:
             parser = argparse.ArgumentParser()
             parser = self.add_model_specific_args(parser)
-            hparams = parser.parse_args()
+            hparams = parser.parse_known_args()
         self.hparams = hparams
         self.learning_rate = self.hparams.learning_rate
         self.use_lr_scheduler = self.hparams.lr_scheduler
