@@ -24,7 +24,8 @@ def pretokenize(model, data, save_dir, x_col="complex", y_col="simple", max_samp
     chunk_count = int(len(data)/chunk_size)+1
 
     for _, chunk in enumerate(np.array_split(data, chunk_count)):
-        tokd = dm.preprocess(list(chunk[x_col]), list(chunk[y_col]), pad_to_max_length=False)
+        tokd = dm.preprocess(list(chunk[x_col]), list(chunk[y_col]), 
+                                pad_to_max_length=False, return_tensors=None)
         i = 0
         for j, _ in chunk.iterrows():
             a = torch.tensor(tokd["input_ids"][i])

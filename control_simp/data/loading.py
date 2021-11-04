@@ -49,7 +49,7 @@ class LazyPreproDataset(Dataset):
     def __init__(self, df, data_dir, y_col=None):
         self.df = df
         self.y_col = y_col
-        self.dara_dir = data_dir
+        self.data_dir = data_dir
 
     def __len__(self):
         return len(self.df)
