@@ -18,7 +18,7 @@ class BartFinetuner(pl.LightningModule):
     metric_names = ["bleu"]
     default_val_metric = "bleu"
 
-    def __init__(self, hparams):
+    def __init__(self, hparams=None):
         super().__init__()
 
         # load pretained model
@@ -33,6 +33,10 @@ class BartFinetuner(pl.LightningModule):
         self.add_new_tokens()
 
         # basic hyperparams
+        if hparams is None:
+            parser = argparse.ArgumentParser()
+            parser = self.add_model_specific_args(parser)
+            hparams = parser.parse_args()
         self.hparams = hparams
         self.learning_rate = self.hparams.learning_rate
         self.use_lr_scheduler = self.hparams.lr_scheduler
