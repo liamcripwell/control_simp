@@ -10,7 +10,7 @@ from control_simp.models.end_to_end import BartFinetuner
 
 class Launcher(object):
 
-    def bart(self, model, data_file, output_dir, x_col, y_col, max_samples):
+    def bart(self, model, data_file, output_dir, x_col, y_col, max_samples=None):
         model = BartFinetuner() # will allow us to use default tokenizer with control tokens in vocab
         df = pd.read_csv(data_file)
         bart_pretok(model, df, output_dir, x_col, y_col, max_samples)
