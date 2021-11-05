@@ -46,19 +46,27 @@ class LazyClassifierDataset(Dataset):
 
 class LazyPreproDataset(Dataset):
 
-    def __init__(self, df, data_dir, y_col=None):
+    def __init__(self, df, data_dir, clf=False, y_col=None, label_tok_ids=None):
         self.df = df
-        self.y_col = y_col
         self.data_dir = data_dir
+        self.clf = clf
+        self.y_col = y_col
+        self.label_tok_ids = label_tok_ids
 
     def __len__(self):
         return len(self.df)
 
     def __getitem__(self, idx):
         tensors = torch.load(f"{self.data_dir}/{idx}_x.pt")
-        item = tuple([t for t in tensors])
 
-        if self.y_col is None:
+        # insert control tokens to input if needed
+        if not self.clf and self.label_tok_ids is not None:
+            label = self.df.iloc[idx][self.y_col]
+            tensors[0] = self.insert_control_tok(tensors[0], label)
+            tensors[1] = torch.cat([tensors[1], torch.tensor([1])])
+
+        item = tuple([t for t in tensors])
+        if not self.clf:
             # load tokenized y sequence if generation task
             item += (torch.load(f"{self.data_dir}/{idx}_y.pt"),)
         else:
@@ -66,3 +74,8 @@ class LazyPreproDataset(Dataset):
             item += (torch.tensor(self.df.iloc[idx][self.y_col]),)
 
         return item
+
+    def insert_control_tok(self, x, label):
+        # inserts a label-dependent control token into the input sequence
+        control_tok_id = self.label_tok_ids[label]
+        return torch.cat([torch.tensor([0, control_tok_id]), x[1:]])
