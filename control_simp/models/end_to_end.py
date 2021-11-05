@@ -12,6 +12,9 @@ from transformers import BartTokenizer, BartForConditionalGeneration
 from control_simp.utils import freeze_params, freeze_embeds, lmap, calculate_bleu
 
 
+CONTROL_TOKENS = ["<ident>", "<para>", "<ssplit>", "<dsplit>"]
+
+
 class BartFinetuner(pl.LightningModule):
 
     loss_names = ["loss"]
@@ -64,8 +67,7 @@ class BartFinetuner(pl.LightningModule):
         self.train_losses = []
 
     def add_new_tokens(self):
-        self.tokenizer.add_tokens(
-            ["<ident>", "<para>", "<ssplit>", "<dsplit>"], special_tokens=True)
+        self.tokenizer.add_tokens(CONTROL_TOKENS, special_tokens=True)
         self.model.resize_token_embeddings(len(self.tokenizer))
 
     def forward(self, input_ids, **kwargs):
@@ -263,5 +265,6 @@ class BartFinetuner(pl.LightningModule):
         parser.add_argument("--eval_max_gen_length", type=int, default=None)
         parser.add_argument("--train_data_dir", type=str, default=None, required=False,)
         parser.add_argument("--valid_data_dir", type=str, default=None, required=False,)
+        parser.add_argument("--use_ctrl_toks", action="store_true")
 
         return parser

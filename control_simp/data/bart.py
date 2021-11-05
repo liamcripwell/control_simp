@@ -9,6 +9,7 @@ from torch.utils.data import DataLoader, TensorDataset
 
 from control_simp.utils import TokenFilter
 from control_simp.data.loading import LazyPreproDataset
+from control_simp.models.end_to_end import CONTROL_TOKENS
 
 
 def pretokenize(model, data, save_dir, x_col="complex", y_col="simple", max_samples=None, chunk_size=32):
@@ -67,6 +68,7 @@ class BartDataModule(pl.LightningDataModule):
         self.valid_data_dir = self.hparams.valid_data_dir
         self.train_workers = self.hparams.train_workers
         self.collate_fn = pad_collate if self.train_data_dir is not None else None
+        self.use_ctrl_toks = self.hparams.use_ctrl_toks
 
     def prepare_data(self):
         # NOTE: shouldn't assign state in here
@@ -103,12 +105,22 @@ class BartDataModule(pl.LightningDataModule):
             self.test = self.build_tensor_dataset(self.preprocess(
                 list(self.test[self.x_col]), list(self.test[self.y_col])))
         else:
-            self.train = LazyPreproDataset(self.train, self.train_data_dir)
+            # get control token ids
+            ctrl_tok_ids = None
+            if self.use_ctrl_toks:
+                ctrl_tok_ids = self.tokenizer.convert_tokens_to_ids(CONTROL_TOKENS)
+
+            # prepare lazy loading datasets for pre-tokenized data
+            self.train = LazyPreproDataset(
+                self.train, self.train_data_dir, label_col="label", label_tok_ids=ctrl_tok_ids)
             if self.val_file is not None:
-                self.validate = LazyPreproDataset(self.validate, self.valid_data_dir)
+                self.validate = LazyPreproDataset(
+                    self.validate, self.valid_data_dir, label_col="label", label_tok_ids=ctrl_tok_ids)
             else:
-                self.validate = LazyPreproDataset(self.validate, self.train_data_dir)
-            self.test = LazyPreproDataset(self.test, self.train_data_dir)
+                self.validate = LazyPreproDataset(
+                    self.validate, self.train_data_dir, label_col="label", label_tok_ids=ctrl_tok_ids)
+            self.test = LazyPreproDataset(
+                self.test, self.train_data_dir, label_col="label", label_tok_ids=ctrl_tok_ids)
 
     def build_tensor_dataset(self, data):
         return TensorDataset(
