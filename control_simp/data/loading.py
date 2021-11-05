@@ -62,8 +62,9 @@ class LazyPreproDataset(Dataset):
         # insert control tokens to input if needed
         if not self.clf and self.label_tok_ids is not None:
             label = self.df.iloc[idx][self.label_col]
-            tensors[0] = self.insert_control_tok(tensors[0], label)
-            tensors[1] = torch.cat([tensors[1], torch.tensor([1])]) # add 1 token pad to input mask
+            x_ = self.insert_control_tok(tensors[0], label)
+            m_ = torch.cat([tensors[1], torch.tensor([1])]) # add 1 token pad to input mask
+            tensors = torch.stack([x_, m_])
 
         item = tuple([t for t in tensors])
         if not self.clf:
