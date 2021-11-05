@@ -1,4 +1,5 @@
 import time
+import psutil
 import argparse
 from typing import Dict, List
 from collections import defaultdict
@@ -17,7 +18,7 @@ class BartFinetuner(pl.LightningModule):
     metric_names = ["bleu"]
     default_val_metric = "bleu"
 
-    def __init__(self, hparams):
+    def __init__(self, hparams=None):
         super().__init__()
 
         # load pretained model
@@ -31,6 +32,12 @@ class BartFinetuner(pl.LightningModule):
         self.tokenizer = tokenizer
         self.add_new_tokens()
 
+        # load default model args if no hparams specified
+        if hparams is None:
+            parser = argparse.ArgumentParser()
+            parser = self.add_model_specific_args(parser)
+            hparams, _ = parser.parse_known_args()
+            
         # basic hyperparams
         self.hparams = hparams
         self.learning_rate = self.hparams.learning_rate
@@ -75,6 +82,12 @@ class BartFinetuner(pl.LightningModule):
             avg_loss = torch.stack(self.train_losses).mean()
             self.logger.experiment.log({'train_loss': avg_loss})
             self.train_losses = []
+
+        if self.hparams.sys_log_interval > 0:
+            if batch_idx % int(self.hparams.sys_log_interval * self.trainer.num_training_batches) == 0:
+                self.logger.experiment.log({
+                    'cpu_memory_use': psutil.virtual_memory().percent
+                })
 
         return {"loss": loss_tensors[0]} #, "log": logs}
 
@@ -229,13 +242,15 @@ class BartFinetuner(pl.LightningModule):
         parser.add_argument("--x_col", type=str, default="x", required=False,)
         parser.add_argument("--y_col", type=str, default="y", required=False,)
         parser.add_argument("--train_check_interval", type=float, default=0.20)
+        parser.add_argument("--sys_log_interval", type=float, default=0.0)
         parser.add_argument("--skip_val_gen", action="store_true")
         parser.add_argument("--freeze_encoder", action="store_true")
         parser.add_argument("--freeze_embeds", action="store_true")
         parser.add_argument("--learning_rate", type=float, default=2e-5)
         parser.add_argument("--lr_scheduler", action="store_true")
         parser.add_argument("--batch_size", type=int, default=16)
-        parser.add_argument("--data_file", type=str, default=None, required=True)
+        parser.add_argument("--train_workers", type=int, default=8)
+        parser.add_argument("--data_file", type=str, default=None, required=False)
         parser.add_argument("--max_samples", type=int, default=-1)
         parser.add_argument("--train_split", type=float, default=0.9)
         parser.add_argument("--val_split", type=float, default=0.05)
@@ -246,5 +261,7 @@ class BartFinetuner(pl.LightningModule):
         parser.add_argument("--val_metric", type=str, default=None, required=False,
             choices=["bleu", "rouge2", "loss",None])
         parser.add_argument("--eval_max_gen_length", type=int, default=None)
+        parser.add_argument("--train_data_dir", type=str, default=None, required=False,)
+        parser.add_argument("--valid_data_dir", type=str, default=None, required=False,)
 
         return parser

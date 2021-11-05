@@ -82,7 +82,7 @@ class LightningBert(pl.LightningModule):
         self.learning_rate = self.hparams.learning_rate
         self.use_lr_scheduler = self.hparams.lr_scheduler
         self.train_check_interval = self.hparams.train_check_interval
-        self.sys_log_interval = self.hparams.sys_log_interval
+        # self.sys_log_interval = self.hparams.sys_log_interval
 
         self.num_labels = num_labels
         if "log_class_acc" not in self.hparams:
