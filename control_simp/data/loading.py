@@ -46,11 +46,11 @@ class LazyClassifierDataset(Dataset):
 
 class LazyPreproDataset(Dataset):
 
-    def __init__(self, df, data_dir, clf=False, y_col=None, label_tok_ids=None):
+    def __init__(self, df, data_dir, clf=False, label_col=None, label_tok_ids=None):
         self.df = df
         self.data_dir = data_dir
         self.clf = clf
-        self.y_col = y_col
+        self.label_col = label_col
         self.label_tok_ids = label_tok_ids
 
     def __len__(self):
@@ -61,7 +61,7 @@ class LazyPreproDataset(Dataset):
 
         # insert control tokens to input if needed
         if not self.clf and self.label_tok_ids is not None:
-            label = self.df.iloc[idx][self.y_col]
+            label = self.df.iloc[idx][self.label_col]
             tensors[0] = self.insert_control_tok(tensors[0], label)
             tensors[1] = torch.cat([tensors[1], torch.tensor([1])]) # add 1 token pad to input mask
 
@@ -71,7 +71,7 @@ class LazyPreproDataset(Dataset):
             item += (torch.load(f"{self.data_dir}/{idx}_y.pt"),)
         else:
             # load label from df if classification task
-            item += (torch.tensor(self.df.iloc[idx][self.y_col]),)
+            item += (torch.tensor(self.df.iloc[idx][self.label_col]),)
 
         return item
 

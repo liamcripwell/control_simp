@@ -111,16 +111,16 @@ class BartDataModule(pl.LightningDataModule):
                 ctrl_tok_ids = self.tokenizer.convert_tokens_to_ids(CONTROL_TOKENS)
 
             # prepare lazy loading datasets for pre-tokenized data
-            self.train = LazyPreproDataset(self.train, self.train_data_dir, 
-                                            y_col=self.y_col, label_tok_ids=ctrl_tok_ids)
+            self.train = LazyPreproDataset(
+                self.train, self.train_data_dir, label_col="label", label_tok_ids=ctrl_tok_ids)
             if self.val_file is not None:
-                self.validate = LazyPreproDataset(self.validate, self.valid_data_dir, 
-                                                    y_col=self.y_col, label_tok_ids=ctrl_tok_ids)
+                self.validate = LazyPreproDataset(
+                    self.validate, self.valid_data_dir, label_col="label", label_tok_ids=ctrl_tok_ids)
             else:
-                self.validate = LazyPreproDataset(self.validate, self.train_data_dir, 
-                                                    y_col=self.y_col, label_tok_ids=ctrl_tok_ids)
-            self.test = LazyPreproDataset(self.test, self.train_data_dir, 
-                                            y_col=self.y_col, label_tok_ids=ctrl_tok_ids)
+                self.validate = LazyPreproDataset(
+                    self.validate, self.train_data_dir, label_col="label", label_tok_ids=ctrl_tok_ids)
+            self.test = LazyPreproDataset(
+                self.test, self.train_data_dir, label_col="label", label_tok_ids=ctrl_tok_ids)
 
     def build_tensor_dataset(self, data):
         return TensorDataset(
