@@ -90,8 +90,8 @@ class BartDataModule(pl.LightningDataModule):
             if self.simp_only:
                 print("Skipping 0 labels...")
                 print(f"Original validation samples: {len(self.validate)}")
-                self.validate = self.data[self.data.label != 0]
-                print(f"Selected training samples: {len(self.validate)}")
+                self.validate = self.validate[self.validate.label != 0]
+                print(f"Selected validation samples: {len(self.validate)}")
         print("All data loaded.")
 
         # train, validation, test split
