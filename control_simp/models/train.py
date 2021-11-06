@@ -1,6 +1,7 @@
 import argparse
 
 import pytorch_lightning as pl
+from pytorch_lightning.plugins import DDPPlugin
 from pytorch_lightning.loggers import WandbLogger
 
 from control_simp.data.bart import BartDataModule
@@ -59,6 +60,7 @@ if __name__ == '__main__':
         val_check_interval=args.val_check_interval,
         logger=wandb_logger,
         accelerator="ddp",
+        plugins=DDPPlugin(find_unused_parameters=False),
         precision=16,)
 
     trainer.fit(model, dm)

@@ -53,7 +53,7 @@ class BartDataModule(pl.LightningDataModule):
         self.tokenizer = tokenizer
 
         # set hyperparams
-        self.hparams = hparams
+        self.hparams.update(vars(hparams))
         self.x_col = self.hparams.x_col
         self.y_col = self.hparams.y_col
         self.batch_size = self.hparams.batch_size
@@ -119,7 +119,7 @@ class BartDataModule(pl.LightningDataModule):
             # get control token ids
             ctrl_tok_ids = None
             if self.use_ctrl_toks:
-                ctrl_tok_ids = self.tokenizer.convert_tokens_to_ids(CONTROL_TOKENS)
+                ctrl_tok_ids = torch.tensor(self.tokenizer.convert_tokens_to_ids(CONTROL_TOKENS))
 
             # prepare lazy loading datasets for pre-tokenized data
             self.train = LazyPreproDataset(
