@@ -42,7 +42,7 @@ class BartFinetuner(pl.LightningModule):
             hparams, _ = parser.parse_known_args()
             
         # basic hyperparams
-        self.hparams = hparams
+        self.hparams.update(vars(hparams))
         self.learning_rate = self.hparams.learning_rate
         self.use_lr_scheduler = self.hparams.lr_scheduler
         self.decoder_start_token_id = None  # default to config (self.pad?)
@@ -266,5 +266,6 @@ class BartFinetuner(pl.LightningModule):
         parser.add_argument("--train_data_dir", type=str, default=None, required=False,)
         parser.add_argument("--valid_data_dir", type=str, default=None, required=False,)
         parser.add_argument("--use_ctrl_toks", action="store_true")
+        parser.add_argument("--simp_only", action="store_true")
 
         return parser
