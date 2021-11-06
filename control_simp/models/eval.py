@@ -18,7 +18,7 @@ def calculate_sari(xx, yy_, yy):
     """
     Compute SARI score for a full set of predictions (assumes single references).
     """
-    sari = corpus_sari(xx, yy_, [[y] for y in yy])
+    sari = corpus_sari(xx, yy_, [yy])
     return sari
 
 def calculate_samsa(yy_, yy):
