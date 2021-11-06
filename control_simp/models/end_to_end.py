@@ -266,5 +266,6 @@ class BartFinetuner(pl.LightningModule):
         parser.add_argument("--train_data_dir", type=str, default=None, required=False,)
         parser.add_argument("--valid_data_dir", type=str, default=None, required=False,)
         parser.add_argument("--use_ctrl_toks", action="store_true")
+        parser.add_argument("--simp_only", action="store_true")
 
         return parser

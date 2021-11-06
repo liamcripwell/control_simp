@@ -69,6 +69,7 @@ class BartDataModule(pl.LightningDataModule):
         self.train_workers = self.hparams.train_workers
         self.collate_fn = pad_collate if self.train_data_dir is not None else None
         self.use_ctrl_toks = self.hparams.use_ctrl_toks
+        self.simp_only = self.hparams.simp_only
 
     def prepare_data(self):
         # NOTE: shouldn't assign state in here
@@ -77,10 +78,20 @@ class BartDataModule(pl.LightningDataModule):
     def setup(self, stage):
         # read and prepare input data
         self.data = pd.read_csv(self.data_file)
+        if self.simp_only:
+            print("Skipping 0 labels...")
+            print(f"Original training samples: {len(self.data)}")
+            self.data = self.data[self.data.label != 0]
+            print(f"Selected training samples: {len(self.data)}")
         self.data = self.data.sample(frac=1)[:min(self.max_samples, len(self.data))] # NOTE: this will actually exclude the last item
         if self.val_file is not None:
             print("Loading specific validation samples...")
             self.validate = pd.read_csv(self.val_file)
+            if self.simp_only:
+                print("Skipping 0 labels...")
+                print(f"Original validation samples: {len(self.validate)}")
+                self.validate = self.data[self.data.label != 0]
+                print(f"Selected training samples: {len(self.validate)}")
         print("All data loaded.")
 
         # train, validation, test split
