@@ -19,7 +19,7 @@ def pretokenize(model, data, save_dir, x_col="complex", y_col="simple", max_samp
     if not os.path.isdir(save_dir):
         os.mkdir(save_dir)
 
-    dm = BartDataModule(model.tokenizer, hparams=model.hparams)
+    dm = BartDataModule(model.tokenizer, hparams=dict(model.hparams))
 
     # number of chunks needed
     chunk_count = int(len(data)/chunk_size)+1
@@ -59,7 +59,7 @@ class BartDataModule(pl.LightningDataModule):
         self.tokenizer = tokenizer
 
         # set hyperparams
-        self.hparams.update(vars(hparams))
+        self.save_parameters(hparams)
         self.x_col = self.hparams.x_col
         self.y_col = self.hparams.y_col
         self.batch_size = self.hparams.batch_size
