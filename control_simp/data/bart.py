@@ -59,7 +59,7 @@ class BartDataModule(pl.LightningDataModule):
         self.tokenizer = tokenizer
 
         # set hyperparams
-        self.save_parameters(hparams)
+        self.save_hyperparameters(hparams)
         self.x_col = self.hparams.x_col
         self.y_col = self.hparams.y_col
         self.batch_size = self.hparams.batch_size
