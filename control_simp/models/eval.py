@@ -18,10 +18,20 @@ def calculate_sari(xx, yy_, yy):
     """
     Compute SARI score for a full set of predictions (assumes single references).
     """
-    sari = corpus_sari(xx, yy_, [yy])
-    return sari
+    saris = [corpus_sari([xx[i]], [yy_[i]], [[yy[i]]]) for i in range(len(xx))]
+    return saris
 
 def calculate_samsa(yy_, yy):
     """Compute SAMSA for given prediction/ground-truth pairs."""
     samsas = get_samsa_sentence_scores(yy_, yy)
     return samsas
+
+def evaluate(inputs, preds, refs, samsa=False):
+    """Compute all evaluation metrics for provided data. SAMSA disabled by default."""
+    results = {}
+    results["bleu"] = calculate_bleu(preds, refs)
+    results["sari"] = calculate_sari(inputs, preds, refs)
+    if samsa:
+        results["samsa"] = calculate_samsa(preds, refs)
+
+    return results
