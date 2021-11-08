@@ -75,7 +75,7 @@ class BartDataModule(pl.LightningDataModule):
         self.train_workers = self.hparams.train_workers
         self.collate_fn = pad_collate if self.train_data_dir is not None else None
         self.use_ctrl_toks = self.hparams.use_ctrl_toks
-        self.simp_only = self.hparams.simp_only
+        self.simp_only = False if "simp_only" not in self.hparams else self.hparams.simp_only
 
     def prepare_data(self):
         # NOTE: shouldn't assign state in here
