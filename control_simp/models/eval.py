@@ -69,6 +69,9 @@ class Launcher(object):
 
     def bart(self, model_loc, test_file, out_file, ctrl_toks=None, max_samples=None, samsa=True, device="cuda"):
         test_set = pd.read_csv(test_file)
+        if max_samples is not None:
+            test_set = test_set[:max_samples]
+            
         model = BartFinetuner.load_from_checkpoint(model_loc, strict=False).to(device).eval()
 
         test_set["pred"] = run_generator(model, test_set, ctrl_toks=ctrl_toks, max_samples=max_samples)
