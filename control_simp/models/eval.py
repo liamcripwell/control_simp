@@ -1,7 +1,11 @@
 
+import fire
+import pandas as pd
 from easse.sari import corpus_sari
 from easse.bleu import sentence_bleu
 from easse.samsa import get_samsa_sentence_scores
+
+from control_simp.models.end_to_end import run_generator, BartFinetuner
 
 
 def calculate_bertscore():
@@ -59,3 +63,23 @@ def run_evaluation(df, x_col="complex", y_col="simple", pred_col="pred", samsa=F
         refs = clean_refs(df[y_col], tokenizer)
 
     return calculate_metrics(inputs, preds, refs, samsa=samsa)
+
+
+class Launcher(object):
+
+    def bart(self, model_loc, test_file, out_file, ctrl_toks=None, max_samples=None, samsa=True, device="cuda"):
+        test_set = pd.read_csv(test_file)
+        model = BartFinetuner.load_from_checkpoint(model_loc, strict=False).to(device).eval()
+
+        test_set["pred"] = run_generator(model, test_set, ctrl_toks=ctrl_toks, max_samples=max_samples)
+
+        results = run_evaluation(test_set, samsa=samsa, tokenizer=model.tokenizer)
+        for metric, vals in results.items():
+            test_set[metric] = vals
+
+        test_set.to_csv(out_file, index=False)
+        
+
+
+if __name__ == '__main__':
+    fire.Fire(Launcher)

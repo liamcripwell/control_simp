@@ -85,7 +85,7 @@ class BartFinetuner(pl.LightningModule):
             hparams, _ = parser.parse_known_args()
             
         # basic hyperparams
-        self.save_hyperparameters(dict(hparams))
+        self.hparams.update(vars(hparams))
         self.learning_rate = self.hparams.learning_rate
         self.use_lr_scheduler = self.hparams.lr_scheduler
         self.decoder_start_token_id = None  # default to config (self.pad?)
