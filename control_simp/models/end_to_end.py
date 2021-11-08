@@ -17,14 +17,22 @@ from control_simp.utils import freeze_params, freeze_embeds, lmap, calculate_ble
 CONTROL_TOKENS = ["<ident>", "<para>", "<ssplit>", "<dsplit>"]
 
 
-def run_generator(model, test_set, x_col="complex", y_col="simple", max_samples=None, device="cuda", batch_size=16):
+def run_generator(model, test_set, x_col="complex", y_col="simple", ctrl_toks=False, max_samples=None, device="cuda", batch_size=16):
     if max_samples is not None:
         test_set = test_set[:max_samples]
 
     with torch.no_grad():
+        # append control tokens if needed
+        input_seqs = list(test_set[x_col])
+        if ctrl_toks:
+            input_seqs = []
+            for _, row in test_set.iterrows():
+                seq = CONTROL_TOKENS[row.label] + " " + row.complex
+                input_seqs.append(seq)
+
         # preprocess data
         dm = control_simp.data.bart.BartDataModule(model.tokenizer, hparams=model.hparams)
-        test = dm.preprocess(list(test_set[x_col]), list(test_set[y_col]))
+        test = dm.preprocess(input_seqs, list(test_set[y_col]))
 
         dataset = TensorDataset(
             test['input_ids'].to(device),
