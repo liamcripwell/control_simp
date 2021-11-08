@@ -26,7 +26,7 @@ def calculate_samsa(yy_, yy):
     samsas = get_samsa_sentence_scores(yy_, yy)
     return samsas
 
-def evaluate(inputs, preds, refs, samsa=False):
+def calculate_metrics(inputs, preds, refs, samsa=False):
     """Compute all evaluation metrics for provided data. SAMSA disabled by default."""
     results = {}
     results["bleu"] = calculate_bleu(preds, refs)
