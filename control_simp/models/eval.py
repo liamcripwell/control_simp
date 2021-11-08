@@ -37,7 +37,9 @@ def calculate_metrics(inputs, preds, refs, samsa=False):
     return results
 
 def clean_refs(refs, tokenizer):
-    """Apply tokenization and decoding to reference sequences to confirm same format as predictions."""
+    """
+    Apply tokenization and decoding to reference sequences to confirm same format as predictions.
+    """
     clean = []
     for y in refs:
         y_ids = tokenizer(y)["input_ids"]
@@ -45,3 +47,15 @@ def clean_refs(refs, tokenizer):
         clean.append(y_)
 
     return clean
+
+def run_evaluation(df, x_col="complex", y_col="simple", pred_col="pred", samsa=False, tokenizer=None):
+    """
+    Handles evaluation for `pandas.DataFrame` containing columns for inputs, references, and predictsions.
+    """
+    inputs = df[x_col]
+    preds = df[pred_col]
+    refs = df[y_col]
+    if tokenizer is not None:
+        refs = clean_refs(df[y_col], tokenizer)
+
+    return calculate_metrics(inputs, preds, refs, samsa=samsa)
