@@ -35,3 +35,13 @@ def calculate_metrics(inputs, preds, refs, samsa=False):
         results["samsa"] = calculate_samsa(preds, refs)
 
     return results
+
+def clean_refs(refs, tokenizer):
+    """Apply tokenization and decoding to reference sequences to confirm same format as predictions."""
+    clean = []
+    for y in refs:
+        y_ids = tokenizer(y)["input_ids"]
+        y_ = tokenizer.decode(y_ids, skip_special_tokens=True)
+        clean.append(y_)
+
+    return clean
