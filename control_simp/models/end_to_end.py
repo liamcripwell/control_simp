@@ -7,12 +7,47 @@ from collections import defaultdict
 import torch
 import numpy as np
 import pytorch_lightning as pl
+from torch.utils.data import DataLoader, TensorDataset
 from transformers import BartTokenizer, BartForConditionalGeneration
 
+from control_simp.data.bart import BartDataModule
 from control_simp.utils import freeze_params, freeze_embeds, lmap, calculate_bleu
 
 
 CONTROL_TOKENS = ["<ident>", "<para>", "<ssplit>", "<dsplit>"]
+
+
+def run_generator(model, test_set, x_col="complex", y_col="simple", max_samples=None, device="cuda", batch_size=16):
+    if max_samples is not None:
+        test_set = test_set[:max_samples]
+
+    with torch.no_grad():
+        # preprocess data
+        dm = BartDataModule(model.tokenizer, hparams=model.hparams)
+        test = dm.preprocess(list(test_set[x_col]), list(test_set[y_col]))
+
+        dataset = TensorDataset(
+            test['input_ids'].to(device),
+            test['attention_mask'].to(device),
+            test['labels'].to(device))
+        test_data = DataLoader(dataset, batch_size=batch_size)
+
+        pred_ys = []
+        for batch in test_data:
+            input_ids, attention_mask, labels = batch
+            generated_ids = model.model.generate(
+                input_ids,
+                attention_mask=attention_mask,
+                use_cache=True,
+                decoder_start_token_id=model.decoder_start_token_id,
+                num_beams=model.eval_beams,
+                max_length=128,
+            )
+            results = model.ids_to_clean_text(generated_ids)
+            pred_ys += results
+
+    return pred_ys
+
 
 
 class BartFinetuner(pl.LightningModule):
