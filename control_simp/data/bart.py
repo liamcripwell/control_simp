@@ -12,21 +12,27 @@ from control_simp.data.loading import LazyPreproDataset
 from control_simp.models.end_to_end import CONTROL_TOKENS
 
 
-def pretokenize(model, data, save_dir, x_col="complex", y_col="simple", max_samples=None, chunk_size=32):
+def pretokenize(model, data, save_dir, x_col="complex", y_col="simple", max_samples=None, chunk_size=32, ctrl_toks=False):
     if max_samples is not None:
         data = data[:max_samples]
 
     if not os.path.isdir(save_dir):
         os.mkdir(save_dir)
 
-    dm = BartDataModule(model.tokenizer, hparams=model.hparams)
+    dm = BartDataModule(model.tokenizer, hparams=dict(model.hparams))
 
     # number of chunks needed
     chunk_count = int(len(data)/chunk_size)+1
 
     for _, chunk in enumerate(np.array_split(data, chunk_count)):
-        tokd = dm.preprocess(list(chunk[x_col]), list(chunk[y_col]), 
-                                pad_to_max_length=False, return_tensors=None)
+        xx = []
+        for i, row in chunk.iterrows():
+            # add control tokens to beginning of inputs
+            seq = CONTROL_TOKENS[row.label] + " " if ctrl_toks else ""
+            seq += row[x_col]
+            xx.append(seq)
+
+        tokd = dm.preprocess(xx, list(chunk[y_col]), pad_to_max_length=False, return_tensors=None)
         i = 0
         for j, _ in chunk.iterrows():
             a = torch.tensor(tokd["input_ids"][i])
@@ -53,7 +59,7 @@ class BartDataModule(pl.LightningDataModule):
         self.tokenizer = tokenizer
 
         # set hyperparams
-        self.hparams.update(vars(hparams))
+        self.save_hyperparameters(hparams)
         self.x_col = self.hparams.x_col
         self.y_col = self.hparams.y_col
         self.batch_size = self.hparams.batch_size
