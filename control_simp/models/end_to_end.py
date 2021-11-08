@@ -10,7 +10,7 @@ import pytorch_lightning as pl
 from torch.utils.data import DataLoader, TensorDataset
 from transformers import BartTokenizer, BartForConditionalGeneration
 
-from control_simp.data.bart import BartDataModule
+import control_simp.data.bart
 from control_simp.utils import freeze_params, freeze_embeds, lmap, calculate_bleu
 
 
@@ -23,7 +23,7 @@ def run_generator(model, test_set, x_col="complex", y_col="simple", max_samples=
 
     with torch.no_grad():
         # preprocess data
-        dm = BartDataModule(model.tokenizer, hparams=model.hparams)
+        dm = control_simp.data.bart.BartDataModule(model.tokenizer, hparams=model.hparams)
         test = dm.preprocess(list(test_set[x_col]), list(test_set[y_col]))
 
         dataset = TensorDataset(
