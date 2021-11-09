@@ -75,6 +75,9 @@ class Launcher(object):
         model = BartFinetuner.load_from_checkpoint(model_loc, strict=False).to(device).eval()
 
         test_set["pred"] = run_generator(model, test_set, ctrl_toks=ctrl_toks, max_samples=max_samples)
+        pred_file = "/".join(out_file.split("/")[:-1]) + "/preds.csv"
+        test_set.to_csv(pred_file, index=False)
+        print(f"Predictions written to {pred_file}.")
 
         results = run_evaluation(test_set, samsa=samsa, tokenizer=model.tokenizer)
         for metric, vals in results.items():
