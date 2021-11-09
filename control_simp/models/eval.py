@@ -86,12 +86,13 @@ class Launcher(object):
         test_set.to_csv(pred_file, index=False)
         print(f"Predictions written to {pred_file}.")
 
+        print("Evaluating predictions...")
         results = run_evaluation(test_set, samsa=samsa, tokenizer=model.tokenizer)
         for metric, vals in results.items():
             test_set[metric] = vals
         eval_file = f"{out_dir}/{name}_eval.csv"
         test_set.to_csv(eval_file, index=False)
-        print(f"Predictions written to {eval_file}.")
+        print(f"Scores written to {eval_file}.")
 
         end = time.time()
         elapsed = end - start
