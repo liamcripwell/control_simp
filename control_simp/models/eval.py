@@ -1,4 +1,6 @@
 
+import time
+
 import fire
 import pandas as pd
 from easse.sari import corpus_sari
@@ -68,12 +70,17 @@ def run_evaluation(df, x_col="complex", y_col="simple", pred_col="pred", samsa=F
 class Launcher(object):
 
     def bart(self, model_loc, test_file, out_dir, name, ctrl_toks=None, max_samples=None, samsa=True, device="cuda"):
+        start = time.time()
+
+        print("Loading data...")
         test_set = pd.read_csv(test_file)
         if max_samples is not None:
             test_set = test_set[:max_samples]
 
+        print("Loading model...")
         model = BartFinetuner.load_from_checkpoint(model_loc, strict=False).to(device).eval()
 
+        print("Generating predictions...")
         test_set["pred"] = run_generator(model, test_set, ctrl_toks=ctrl_toks, max_samples=max_samples)
         pred_file = f"{out_dir}/{name}_preds.csv"
         test_set.to_csv(pred_file, index=False)
@@ -82,10 +89,14 @@ class Launcher(object):
         results = run_evaluation(test_set, samsa=samsa, tokenizer=model.tokenizer)
         for metric, vals in results.items():
             test_set[metric] = vals
+        eval_file = f"{out_dir}/{name}_eval.csv"
+        test_set.to_csv(eval_file, index=False)
+        print(f"Predictions written to {eval_file}.")
 
-        test_set.to_csv(f"{out_dir}/{name}_eval.csv", index=False)
+        end = time.time()
+        elapsed = end - start
+        print(f"Done! (Took {elapsed}s in total)")
         
-
 
 if __name__ == '__main__':
     fire.Fire(Launcher)
