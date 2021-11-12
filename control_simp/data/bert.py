@@ -17,7 +17,7 @@ def pretokenize(model, data, save_dir, x_col="complex", max_samples=None, chunk_
     if not os.path.isdir(save_dir):
         os.mkdir(save_dir)
 
-    dm = BertDataModule(model.tokenizer, hparams=model.hparams)
+    dm = BertDataModule(model.tokenizer, hparams=dict(model.hparams))
 
     # number of chunks needed
     chunk_count = int(len(data)/chunk_size)+1
