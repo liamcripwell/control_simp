@@ -44,7 +44,7 @@ class BertDataModule(pl.LightningDataModule):
 
         if hparams != None:
             # set hyperparams
-            self.hparams = hparams
+            self.save_hyperparameters(hparams)
             self.x_col = self.hparams.x_col
             self.y_col = self.hparams.y_col
             self.data_file = self.hparams.data_file
