@@ -1,4 +1,5 @@
 
+import os
 import time
 
 import fire
@@ -69,8 +70,13 @@ def run_evaluation(df, x_col="complex", y_col="simple", pred_col="pred", samsa=F
 
 class Launcher(object):
 
-    def bart(self, model_loc, test_file, out_dir, name, ctrl_toks=None, max_samples=None, samsa=True, device="cuda"):
+    def bart(self, model_loc, test_file, out_dir, name, ctrl_toks=None, max_samples=None, samsa=True, device="cuda", ow=False):
         start = time.time()
+
+        pred_file = f"{out_dir}/{name}_preds.csv"
+        eval_file = f"{out_dir}/{name}_eval.csv"
+        if not ow and (os.path.isfile(pred_file) or os.path.isfile(eval_file)):
+            raise ValueError("The outfiles that would be written for this job already exists! Use `--ow=True` to overwrite them.")
 
         print("Loading data...")
         test_set = pd.read_csv(test_file)
@@ -82,7 +88,6 @@ class Launcher(object):
 
         print("Generating predictions...")
         test_set["pred"] = run_generator(model, test_set, ctrl_toks=ctrl_toks, max_samples=max_samples)
-        pred_file = f"{out_dir}/{name}_preds.csv"
         test_set.to_csv(pred_file, index=False)
         print(f"Predictions written to {pred_file}.")
 
@@ -90,7 +95,6 @@ class Launcher(object):
         results = run_evaluation(test_set, samsa=samsa, tokenizer=model.tokenizer)
         for metric, vals in results.items():
             test_set[metric] = vals
-        eval_file = f"{out_dir}/{name}_eval.csv"
         test_set.to_csv(eval_file, index=False)
         print(f"Scores written to {eval_file}.")
 
