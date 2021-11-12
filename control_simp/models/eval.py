@@ -33,12 +33,14 @@ def calculate_samsa(xx, yy_):
     samsas = get_samsa_sentence_scores(xx, yy_)
     return samsas
 
-def calculate_metrics(inputs, preds, refs, samsa=False):
+def calculate_metrics(inputs, preds, refs, metrics=["blue", "sari"]):
     """Compute all evaluation metrics for provided data. SAMSA disabled by default."""
     results = {}
-    results["bleu"] = calculate_bleu(preds, refs)
-    results["sari"] = calculate_sari(inputs, preds, refs)
-    if samsa:
+    if "bleu" in metrics:
+        results["bleu"] = calculate_bleu(preds, refs)
+    if "sari" in metrics:
+        results["sari"] = calculate_sari(inputs, preds, refs)
+    if "samsa" in metrics:
         results["samsa"] = calculate_samsa(preds, refs)
 
     return results
@@ -64,8 +66,11 @@ def run_evaluation(df, x_col="complex", y_col="simple", pred_col="pred", samsa=F
     refs = df[y_col]
     if tokenizer is not None:
         refs = clean_refs(df[y_col], tokenizer)
+    metrics = ["bleu", "sari"]
+    if samsa:
+        metrics.append("samsa")
 
-    return calculate_metrics(inputs, preds, refs, samsa=samsa)
+    return calculate_metrics(inputs, preds, refs, metrics=metrics)
 
 
 class Launcher(object):
