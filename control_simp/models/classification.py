@@ -82,7 +82,7 @@ class LightningBert(pl.LightningModule):
 
         # basic hyperparams
         if isinstance(hparams, dict):
-            self.save_hyperparameters(vars(hparams))
+            self.save_hyperparameters(hparams)
         else:
             self.save_hyperparameters(dict(hparams))
         self.learning_rate = self.hparams.learning_rate
