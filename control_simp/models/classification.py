@@ -40,7 +40,7 @@ def run_classifier(model, test_set, input_col="complex", max_samples=None, devic
             if return_logits:
                 preds += logits
             else:
-                preds.append(int(logits.argmax()))
+                preds += [int(l.argmax()) for l in logits]
     
     return preds
 
