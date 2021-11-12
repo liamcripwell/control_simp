@@ -17,7 +17,7 @@ INPUTS = {
 }
 
 
-def run_classifier(model, test_set, input_col="complex", max_samples=None, device="cuda", batch_size=16):
+def run_classifier(model, test_set, input_col="complex", max_samples=None, device="cuda", batch_size=16, return_logits=True):
     if max_samples is not None:
         test_set = test_set[:max_samples]
 
@@ -37,7 +37,10 @@ def run_classifier(model, test_set, input_col="complex", max_samples=None, devic
             _batch = {features[i]:batch[i] for i in range(len(features))}
             output = model.model(**_batch, return_dict=True)
             _, logits = extract_results(output)
-            preds += logits
+            if return_logits:
+                preds += logits
+            else:
+                preds.append(int(logits.argmax()))
     
     return preds
 
