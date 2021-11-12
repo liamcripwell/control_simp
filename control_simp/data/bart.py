@@ -7,9 +7,9 @@ import pytorch_lightning as pl
 from torch.nn.utils.rnn import pad_sequence
 from torch.utils.data import DataLoader, TensorDataset
 
+import control_simp.models.end_to_end
 from control_simp.utils import TokenFilter
 from control_simp.data.loading import LazyPreproDataset
-from control_simp.models.end_to_end import CONTROL_TOKENS
 
 
 def pretokenize(model, data, save_dir, x_col="complex", y_col="simple", max_samples=None, chunk_size=32, ctrl_toks=False):
@@ -28,7 +28,7 @@ def pretokenize(model, data, save_dir, x_col="complex", y_col="simple", max_samp
         xx = []
         for i, row in chunk.iterrows():
             # add control tokens to beginning of inputs
-            seq = CONTROL_TOKENS[row.label] + " " if ctrl_toks else ""
+            seq = control_simp.models.end_to_end.CONTROL_TOKENS[row.label] + " " if ctrl_toks else ""
             seq += row[x_col]
             xx.append(seq)
 
@@ -75,7 +75,7 @@ class BartDataModule(pl.LightningDataModule):
         self.train_workers = self.hparams.train_workers
         self.collate_fn = pad_collate if self.train_data_dir is not None else None
         self.use_ctrl_toks = self.hparams.use_ctrl_toks
-        self.simp_only = self.hparams.simp_only
+        self.simp_only = False if "simp_only" not in self.hparams else self.hparams.simp_only
 
     def prepare_data(self):
         # NOTE: shouldn't assign state in here
@@ -125,7 +125,7 @@ class BartDataModule(pl.LightningDataModule):
             # get control token ids
             ctrl_tok_ids = None
             if self.use_ctrl_toks:
-                ctrl_tok_ids = torch.tensor(self.tokenizer.convert_tokens_to_ids(CONTROL_TOKENS))
+                ctrl_tok_ids = torch.tensor(self.tokenizer.convert_tokens_to_ids(control_simp.models.end_to_end.CONTROL_TOKENS))
 
             # prepare lazy loading datasets for pre-tokenized data
             self.train = LazyPreproDataset(

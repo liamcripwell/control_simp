@@ -2,7 +2,7 @@ numpy==1.19.4
 pandas==1.1.4
 pytest==6.1.2
 python-Levenshtein==0.12.2
-pytorch-lightning==1.0.8
+pytorch-lightning==1.5.0
 sacrebleu==1.4.14
 torch==1.7.1 # pytorch-lightning mixed precision breaks on <=1.7 for generative models
 transformers==3.5.1
