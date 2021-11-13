@@ -161,6 +161,7 @@ class LightningBert(pl.LightningModule):
 
         # wandb log
         self.logger.experiment.log(result)
+        self.log("val_loss", loss)
 
         return result
 
