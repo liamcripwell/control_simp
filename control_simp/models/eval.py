@@ -9,6 +9,7 @@ from easse.bleu import sentence_bleu
 from easse.samsa import get_samsa_sentence_scores
 
 from control_simp.models.end_to_end import run_generator, BartFinetuner
+from control_simp.models.classification import run_classifier, LightningBert
 
 
 def calculate_bertscore():
@@ -102,6 +103,34 @@ class Launcher(object):
             test_set[metric] = vals
         test_set.to_csv(eval_file, index=False)
         print(f"Scores written to {eval_file}.")
+
+        end = time.time()
+        elapsed = end - start
+        print(f"Done! (Took {elapsed}s in total)")
+
+    def clf(self, model_loc, test_file, out_file, input_col="complex", max_samples=None, device="cuda"):
+        start = time.time()
+
+        print("Loading data...")
+        test_set = pd.read_csv(test_file)
+        if max_samples is not None:
+            test_set = test_set[:max_samples]
+
+        print("Loading model...")
+        model = LightningBert.load_from_checkpoint(model_loc, model_type="roberta").to("cuda").eval()
+
+        print("Running predictions...")
+        test_set["pred_l"] = run_classifier(model, test_set, input_col, max_samples=max_samples, device="cuda", return_logits=False)
+
+        # check if predictions are correct
+        correct = []
+        for i, row in test_set[:max_samples].iterrows():
+            correct.append(int(row.pred_l) == int(row.label))
+        test_set["correct"] = correct
+        print(f"Overall accuracy: {test_set['correct'].sum() / len(test_set)}")
+
+        test_set.to_csv(out_file, index=False)
+        print(f"Predictions written to {out_file}.")
 
         end = time.time()
         elapsed = end - start

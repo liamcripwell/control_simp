@@ -17,7 +17,7 @@ def pretokenize(model, data, save_dir, x_col="complex", max_samples=None, chunk_
     if not os.path.isdir(save_dir):
         os.mkdir(save_dir)
 
-    dm = BertDataModule(model.tokenizer, hparams=model.hparams)
+    dm = BertDataModule(model.tokenizer, hparams=dict(model.hparams))
 
     # number of chunks needed
     chunk_count = int(len(data)/chunk_size)+1
@@ -44,7 +44,7 @@ class BertDataModule(pl.LightningDataModule):
 
         if hparams != None:
             # set hyperparams
-            self.hparams = hparams
+            self.save_hyperparameters(hparams)
             self.x_col = self.hparams.x_col
             self.y_col = self.hparams.y_col
             self.data_file = self.hparams.data_file
