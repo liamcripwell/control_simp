@@ -81,8 +81,6 @@ class Launcher(object):
 
         pred_file = f"{out_dir}/{name}_preds.csv"
         eval_file = f"{out_dir}/{name}_eval.csv"
-        if not ow and (os.path.isfile(pred_file) or os.path.isfile(eval_file)):
-            raise ValueError("The output files that would be written for this job already exist! Use `--ow=True` to overwrite them.")
 
         print("Loading data...")
         test_set = pd.read_csv(test_file)
