@@ -38,10 +38,13 @@ def calculate_metrics(inputs, preds, refs, metrics=["blue", "sari"]):
     """Compute all evaluation metrics for provided data. SAMSA disabled by default."""
     results = {}
     if "bleu" in metrics:
+        print("Calculating BLEUs...")
         results["bleu"] = calculate_bleu(preds, refs)
     if "sari" in metrics:
+        print("Calculating SARIs...")
         results["sari"] = calculate_sari(inputs, preds, refs)
     if "samsa" in metrics:
+        print("Calculating SAMSAs...")
         results["samsa"] = calculate_samsa(preds, refs)
 
     return results
@@ -58,7 +61,7 @@ def clean_refs(refs, tokenizer):
 
     return clean
 
-def run_evaluation(df, x_col="complex", y_col="simple", pred_col="pred", samsa=False, tokenizer=None):
+def run_evaluation(df, x_col="complex", y_col="simple", pred_col="pred", metrics=["bleu", "sari"], tokenizer=None):
     """
     Handles evaluation for `pandas.DataFrame` containing columns for inputs, references, and predictsions.
     """
@@ -67,9 +70,6 @@ def run_evaluation(df, x_col="complex", y_col="simple", pred_col="pred", samsa=F
     refs = df[y_col]
     if tokenizer is not None:
         refs = clean_refs(df[y_col], tokenizer)
-    metrics = ["bleu", "sari"]
-    if samsa:
-        metrics.append("samsa")
 
     return calculate_metrics(inputs, preds, refs, metrics=metrics)
 
@@ -82,7 +82,7 @@ class Launcher(object):
         pred_file = f"{out_dir}/{name}_preds.csv"
         eval_file = f"{out_dir}/{name}_eval.csv"
         if not ow and (os.path.isfile(pred_file) or os.path.isfile(eval_file)):
-            raise ValueError("The outfiles that would be written for this job already exists! Use `--ow=True` to overwrite them.")
+            raise ValueError("The output files that would be written for this job already exist! Use `--ow=True` to overwrite them.")
 
         print("Loading data...")
         test_set = pd.read_csv(test_file)
@@ -98,7 +98,10 @@ class Launcher(object):
         print(f"Predictions written to {pred_file}.")
 
         print("Evaluating predictions...")
-        results = run_evaluation(test_set, samsa=samsa, tokenizer=model.tokenizer)
+        metrics = ["bleu", "sari"]
+        if samsa:
+            metrics.append("samsa")
+        results = run_evaluation(test_set, metrics=metrics, tokenizer=model.tokenizer)
         for metric, vals in results.items():
             test_set[metric] = vals
         test_set.to_csv(eval_file, index=False)
