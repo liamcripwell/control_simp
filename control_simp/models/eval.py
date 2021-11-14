@@ -92,18 +92,30 @@ class Launcher(object):
         print("Loading model...")
         model = BartFinetuner.load_from_checkpoint(model_loc, strict=False).to(device).eval()
 
-        print("Generating predictions...")
-        test_set["pred"] = run_generator(model, test_set, ctrl_toks=ctrl_toks, max_samples=max_samples)
-        test_set.to_csv(pred_file, index=False)
-        print(f"Predictions written to {pred_file}.")
+        # run generation on test data
+        if ow or not os.path.isfile(pred_file):
+            print("Generating predictions...")
+            test_set["pred"] = run_generator(model, test_set, ctrl_toks=ctrl_toks, max_samples=max_samples)
+            test_set.to_csv(pred_file, index=False)
+            print(f"Predictions written to {pred_file}.")
+        else:
+            test_set = pd.read_csv(pred_file)
 
         print("Evaluating predictions...")
         metrics = ["bleu", "sari"]
         if samsa:
             metrics.append("samsa")
+        if not ow and os.path.isfile(eval_file):
+            # don't re-compute existing metrics
+            test_set = pd.read_csv(eval_file)
+            metrics = [m for m in metrics if m not in test_set.columns]
+            print(f"New evaluation metrics to be computed: {metrics}")
+
+        # run evaluation process
         results = run_evaluation(test_set, metrics=metrics, tokenizer=model.tokenizer)
         for metric, vals in results.items():
             test_set[metric] = vals
+
         test_set.to_csv(eval_file, index=False)
         print(f"Scores written to {eval_file}.")
 
