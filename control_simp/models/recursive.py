@@ -28,12 +28,18 @@ class RecursiveGenerator():
                 print("Generating...")
                 pred_ls = []
                 preds = []
-                for j, row in df.iterrows():
+                for _, row in df.iterrows():
                     # concatenate predicted simplification of each sentence in input
                     xs = sent_tokenize(row[x_col])
                     ls = run_classifier(self.clf, xs, device=self.device, return_logits=False)
                     pred_ls.append(ls)
                     ys = run_generator(self.gen, xs, ctrl_toks=ls)
+
+                    # forceably use inputs where 0 label predicted
+                    for j in range(len(xs)):
+                        if ls[j] == 0:
+                            ys[j] = xs[j]
+
                     preds.append(" ".join(ys))
                 df[f"labels_{i+1}"] = pred_ls
                 df[step_pred] = preds
