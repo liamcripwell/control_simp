@@ -26,13 +26,16 @@ class RecursiveGenerator():
             # skip step if _i_th order predictions already exist
             if step_pred not in df.columns:
                 print("Generating...")
+                pred_ls = []
                 preds = []
                 for i, row in df.iterrows():
                     # concatenate predicted simplification of each sentence in input
                     xs = sent_tokenize(row[x_col])
-                    l_preds = run_classifier(self.clf, xs, device=self.device, return_logits=False)
-                    ys = run_generator(self.gen, xs, ctrl_toks=l_preds)
+                    ls = run_classifier(self.clf, xs, device=self.device, return_logits=False)
+                    pred_ls.append(ls)
+                    ys = run_generator(self.gen, xs, ctrl_toks=ls)
                     preds.append(" ".join(ys))
+                df[f"labels_{i+1}"] = pred_ls
                 df[step_pred] = preds
             else:
                 print("Generation already performed.")
