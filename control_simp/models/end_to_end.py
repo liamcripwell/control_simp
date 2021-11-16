@@ -41,7 +41,7 @@ def run_generator(model, test_set, x_col="complex", ctrl_toks=None, max_samples=
             new_seqs = []
             toks = ctrl_toks if isinstance(ctrl_toks, list) else test_set[ctrl_toks]
             for i in range(len(test_set)):
-                new_seqs[i] = CONTROL_TOKENS[toks[i]] + " " + input_seqs[i]
+                new_seqs.append(CONTROL_TOKENS[toks[i]] + " " + input_seqs[i])
             input_seqs = new_seqs
 
         # preprocess data
