@@ -1,3 +1,4 @@
+from nltk import sent_tokenize
 
 from control_simp.models.end_to_end import run_generator, BartFinetuner
 from control_simp.models.classification import run_classifier, LightningBert
@@ -15,14 +16,20 @@ class RecursiveGenerator():
         self.gen = BartFinetuner.load_from_checkpoint(gen_loc, strict=False).to(device).eval()
 
     def generate(self, df, x_col="complex", k=1, max_samples=None):
-        df["pred"] = df[x_col]
+        if max_samples is not None:
+            df = df[:max_samples]
 
         for i in range(k):
-            print(f"Iteration {i}...")
-            print("Predicting labels...")
-            df["pred_l"] = run_classifier(self.clf, df, "pred", max_samples=max_samples, device=self.device, return_logits=False)
+            print(f"Iteration {i+1}...")
 
-            print("Generating predictions...")
-            df["pred"] = run_generator(self.gen, df, ctrl_toks="pred_l", max_samples=max_samples)
+            preds = []
+            for i, row in df.iterrows():
+                xs = sent_tokenize(row[x_col])
+                l_preds = run_classifier(self.clf, xs, device=self.device, return_logits=False)
+                ys = run_generator(self.gen, xs, ctrl_toks=l_preds)
+                preds.append(" ".join(ys))
+
+            x_col = f"pred_{i+1}"
+            df[x_col] = preds
 
         return df
