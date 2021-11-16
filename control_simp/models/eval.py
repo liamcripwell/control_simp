@@ -153,8 +153,8 @@ class Launcher(object):
     def recursive(self, clf_loc, gen_loc, test_file, out_dir, name, x_col="complex", k=2, max_samples=None, device="cuda", ow=False):
         start = time.time()
 
-        pred_file = f"{out_dir}/{name}_r_preds.csv"
-        eval_file = f"{out_dir}/{name}_r_eval.csv"
+        pred_file = f"{out_dir}/{name}_rec_preds.csv"
+        eval_file = f"{out_dir}/{name}_rec_eval.csv"
 
         print("Loading data...")
         test_set = pd.read_csv(test_file)
@@ -164,13 +164,12 @@ class Launcher(object):
         model = RecursiveGenerator(clf_loc, gen_loc, device=device)
 
         # run generation on test data
-        if ow or not os.path.isfile(pred_file):
-            print("Generating predictions...")
-            test_set = model.generate(test_set, x_col, k=k)
-            test_set.to_csv(pred_file, index=False)
-            print(f"Predictions written to {pred_file}.")
-        else:
+        if not ow and os.path.isfile(pred_file):
+            print("Loading previous generated outputs...")
             test_set = pd.read_csv(pred_file)
+        test_set = model.generate(test_set, x_col, k=k)
+        test_set.to_csv(pred_file, index=False)
+        print(f"Predictions written to {pred_file}.")
         
 
 if __name__ == '__main__':
