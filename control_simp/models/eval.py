@@ -150,7 +150,7 @@ class Launcher(object):
         elapsed = end - start
         print(f"Done! (Took {elapsed}s in total)")
 
-    def recursive(self, clf_loc, gen_loc, test_file, out_dir, name, x_col="complex", k=2, max_samples=None, device="cuda", ow=False):
+    def recursive(self, clf_loc, gen_loc, test_file, out_dir, name, x_col="complex", k=2, max_samples=None, samsa=False, device="cuda", ow=False):
         start = time.time()
 
         pred_file = f"{out_dir}/{name}_rec_preds.csv"
@@ -170,6 +170,25 @@ class Launcher(object):
         test_set = model.generate(test_set, x_col, k=k)
         test_set.to_csv(pred_file, index=False)
         print(f"Predictions written to {pred_file}.")
+
+        # run evaluation
+        if not ow and os.path.isfile(eval_file):
+            test_set = pd.read_csv(eval_file)
+
+        for i in range(1, k+1):
+            metrics = ["bleu", "sari"]
+            if samsa:
+                metrics.append("samsa")
+            metrics = [m for m in metrics if f"{m}_{i}" not in test_set.columns]
+            print(f"New evaluation metrics to be computed: {metrics}")
+
+            # run evaluation process
+            results = run_evaluation(test_set, pred_col=f"pred_{i}", metrics=metrics, tokenizer=model.tokenizer)
+            for metric, vals in results.items():
+                test_set[f"{metric}_{i}"] = vals
+
+            test_set.to_csv(eval_file, index=False)
+            print(f"Scores written to {eval_file}.")
         
 
 if __name__ == '__main__':
