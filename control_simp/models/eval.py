@@ -66,11 +66,11 @@ def run_evaluation(df, x_col="complex", y_col="simple", pred_col="pred", metrics
     """
     Handles evaluation for `pandas.DataFrame` containing columns for inputs, references, and predictsions.
     """
-    inputs = df[x_col]
-    preds = df[pred_col]
-    refs = df[y_col]
+    inputs = list(df[x_col])
+    preds = list(df[pred_col])
+    refs = list(df[y_col])
     if tokenizer is not None:
-        refs = clean_refs(df[y_col], tokenizer)
+        refs = clean_refs(refs, tokenizer)
 
     return calculate_metrics(inputs, preds, refs, metrics=metrics)
 
