@@ -38,9 +38,11 @@ def run_generator(model, test_set, x_col="complex", ctrl_toks=None, max_samples=
 
         # prepend control tokens if needed
         if ctrl_toks is not None:
+            new_seqs = []
             toks = ctrl_toks if isinstance(ctrl_toks, list) else test_set[ctrl_toks]
             for i in range(len(test_set)):
-                input_seqs[i] = CONTROL_TOKENS[toks[i]] + " " + input_seqs[i]
+                new_seqs[i] = CONTROL_TOKENS[toks[i]] + " " + input_seqs[i]
+            input_seqs = new_seqs
 
         # preprocess data
         dm = control_simp.data.bart.BartDataModule(model.tokenizer, hparams=model.hparams)
