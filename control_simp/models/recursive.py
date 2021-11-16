@@ -38,7 +38,7 @@ class RecursiveGenerator():
                     # forceably use inputs where 0 label predicted
                     for j in range(len(xs)):
                         if ls[j] == 0:
-                            ys[j] = xs[j]
+                            ys[j] = xs[j].replace("<ident> ", "")
 
                     preds.append(" ".join(ys))
                 df[f"labels_{i+1}"] = pred_ls
