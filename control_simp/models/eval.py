@@ -23,7 +23,7 @@ def calculate_bertscore(yy_, yy):
     p, r, f = get_bertscore_sentence_scores(yy_, [yy])
 
     # return precision sub-metric
-    return list(p)
+    return p.tolist()
 
 def calculate_bleu(yy_, yy):
     """
