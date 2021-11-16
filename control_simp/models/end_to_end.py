@@ -17,6 +17,18 @@ from control_simp.utils import freeze_params, freeze_embeds, lmap, calculate_ble
 CONTROL_TOKENS = ["<ident>", "<para>", "<ssplit>", "<dsplit>"]
 
 
+def prepare_loader(dm, xx, yy, device="cuda", batch_size=16):
+    prep = dm.preprocess(xx, yy)
+
+    dataset = TensorDataset(
+        prep['input_ids'].to(device),
+        prep['attention_mask'].to(device),
+        prep['labels'].to(device))
+    loader = DataLoader(dataset, batch_size=batch_size)
+
+    return loader
+
+
 def run_generator(model, test_set, x_col="complex", y_col="simple", ctrl_toks=None, max_samples=None, device="cuda", batch_size=16):
     if max_samples is not None:
         test_set = test_set[:max_samples]
@@ -32,13 +44,7 @@ def run_generator(model, test_set, x_col="complex", y_col="simple", ctrl_toks=No
 
         # preprocess data
         dm = control_simp.data.bart.BartDataModule(model.tokenizer, hparams=model.hparams)
-        test = dm.preprocess(input_seqs, list(test_set[y_col]))
-
-        dataset = TensorDataset(
-            test['input_ids'].to(device),
-            test['attention_mask'].to(device),
-            test['labels'].to(device))
-        test_data = DataLoader(dataset, batch_size=batch_size)
+        test_data = prepare_loader(input_seqs, test_set[y_col], device, batch_size)
 
         pred_ys = []
         for batch in test_data:
@@ -52,6 +58,7 @@ def run_generator(model, test_set, x_col="complex", y_col="simple", ctrl_toks=No
                 max_length=128,
             )
             results = model.ids_to_clean_text(generated_ids)
+            
             pred_ys += results
 
     return pred_ys
