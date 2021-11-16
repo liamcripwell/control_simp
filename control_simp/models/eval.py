@@ -8,6 +8,7 @@ from easse.sari import corpus_sari
 from easse.bleu import sentence_bleu
 from easse.samsa import get_samsa_sentence_scores
 
+from control_simp.models.recursive import RecursiveGenerator
 from control_simp.models.end_to_end import run_generator, BartFinetuner
 from control_simp.models.classification import run_classifier, LightningBert
 
@@ -65,11 +66,11 @@ def run_evaluation(df, x_col="complex", y_col="simple", pred_col="pred", metrics
     """
     Handles evaluation for `pandas.DataFrame` containing columns for inputs, references, and predictsions.
     """
-    inputs = df[x_col]
-    preds = df[pred_col]
-    refs = df[y_col]
+    inputs = list(df[x_col])
+    preds = list(df[pred_col])
+    refs = list(df[y_col])
     if tokenizer is not None:
-        refs = clean_refs(df[y_col], tokenizer)
+        refs = clean_refs(refs, tokenizer)
 
     return calculate_metrics(inputs, preds, refs, metrics=metrics)
 
@@ -144,6 +145,50 @@ class Launcher(object):
 
         test_set.to_csv(out_file, index=False)
         print(f"Predictions written to {out_file}.")
+
+        end = time.time()
+        elapsed = end - start
+        print(f"Done! (Took {elapsed}s in total)")
+
+    def recursive(self, clf_loc, gen_loc, test_file, out_dir, name, x_col="complex", k=2, max_samples=None, samsa=False, device="cuda", ow=False):
+        start = time.time()
+
+        pred_file = f"{out_dir}/{name}_rec_preds.csv"
+        eval_file = f"{out_dir}/{name}_rec_eval.csv"
+
+        print("Loading data...")
+        test_set = pd.read_csv(test_file)
+        if max_samples is not None:
+            test_set = test_set[:max_samples]
+
+        model = RecursiveGenerator(clf_loc, gen_loc, device=device)
+
+        # run generation on test data
+        if not ow and os.path.isfile(pred_file):
+            print("Loading previous generated outputs...")
+            test_set = pd.read_csv(pred_file)
+        test_set = model.generate(test_set, x_col, k=k)
+        test_set.to_csv(pred_file, index=False)
+        print(f"Predictions written to {pred_file}.")
+
+        # run evaluation
+        if not ow and os.path.isfile(eval_file):
+            test_set = pd.read_csv(eval_file)
+
+        for i in range(1, k+1):
+            metrics = ["bleu", "sari"]
+            if samsa:
+                metrics.append("samsa")
+            metrics = [m for m in metrics if f"{m}_{i}" not in test_set.columns]
+            print(f"New evaluation metrics to be computed: {metrics}")
+
+            # run evaluation process
+            results = run_evaluation(test_set, pred_col=f"pred_{i}", metrics=metrics, tokenizer=model.tokenizer)
+            for metric, vals in results.items():
+                test_set[f"{metric}_{i}"] = vals
+
+            test_set.to_csv(eval_file, index=False)
+            print(f"Scores written to {eval_file}.")
 
         end = time.time()
         elapsed = end - start

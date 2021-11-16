@@ -158,20 +158,24 @@ class BartDataModule(pl.LightningDataModule):
         return DataLoader(self.test, batch_size=self.batch_size, num_workers=1, 
                             pin_memory=True, collate_fn=self.collate_fn)
 
-    def preprocess(self, source_sequences, target_sequences, pad_to_max_length=True, return_tensors="pt"):
+    def preprocess(self, source_sequences, target_sequences=None, pad_to_max_length=True, return_tensors="pt"):
         """Transforms data into tokenized input/output sequences."""
         source_sequences = TokenFilter(max_len=self.max_source_length, blacklist=["<SEP>"])(source_sequences)
-        target_sequences = TokenFilter(max_len=self.max_target_length, blacklist=["<SEP>"])(target_sequences)
-
         transformed_x = self.tokenizer(source_sequences, max_length=self.max_source_length,
                             padding=pad_to_max_length, truncation=True, 
                             return_tensors=return_tensors, add_prefix_space=True)
-        transformed_y = self.tokenizer(target_sequences, max_length=self.max_target_length,
-                            padding=pad_to_max_length, truncation=True, 
-                            return_tensors=return_tensors, add_prefix_space=True)
-
-        return {
+        
+        result = {
             "input_ids": transformed_x['input_ids'],
             "attention_mask": transformed_x['attention_mask'],
-            "labels": transformed_y['input_ids'],
         }
+
+        # preprocess target sequences if provided
+        if target_sequences is not None:
+            target_sequences = TokenFilter(max_len=self.max_target_length, blacklist=["<SEP>"])(target_sequences)
+            transformed_y = self.tokenizer(target_sequences, max_length=self.max_target_length,
+                                padding=pad_to_max_length, truncation=True, 
+                                return_tensors=return_tensors, add_prefix_space=True)
+            result["labels"] = transformed_y['input_ids']
+
+        return result

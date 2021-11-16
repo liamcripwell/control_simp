@@ -1,9 +1,8 @@
 import numpy as np
-import pandas as pd
 from Levenshtein import ratio
 from nltk import sent_tokenize
 
-from disco_split.processing.utils import find_inner_connective, find_forward_connective, find_adverbial
+from disco_split.processing.utils import find_adverbial
 
 
 def add_lev_ratio(df, xcol="complex", ycol="simple", reset=False):
