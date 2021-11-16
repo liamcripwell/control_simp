@@ -8,6 +8,7 @@ from easse.sari import corpus_sari
 from easse.bleu import sentence_bleu
 from easse.samsa import get_samsa_sentence_scores
 
+from control_simp.models.recursive import RecursiveGenerator
 from control_simp.models.end_to_end import run_generator, BartFinetuner
 from control_simp.models.classification import run_classifier, LightningBert
 
@@ -148,6 +149,28 @@ class Launcher(object):
         end = time.time()
         elapsed = end - start
         print(f"Done! (Took {elapsed}s in total)")
+
+    def recursive(self, clf_loc, gen_loc, test_file, out_dir, name, x_col="complex", k=2, max_samples=None, device="cuda", ow=False):
+        start = time.time()
+
+        pred_file = f"{out_dir}/{name}_r{k}_preds.csv"
+        eval_file = f"{out_dir}/{name}_r{k}_eval.csv"
+
+        print("Loading data...")
+        test_set = pd.read_csv(test_file)
+        if max_samples is not None:
+            test_set = test_set[:max_samples]
+
+        model = RecursiveGenerator(clf_loc, gen_loc, device=device)
+
+        # run generation on test data
+        if ow or not os.path.isfile(pred_file):
+            print("Generating predictions...")
+            test_set = model.generate(test_set, x_col, k=k)
+            test_set.to_csv(pred_file, index=False)
+            print(f"Predictions written to {pred_file}.")
+        else:
+            test_set = pd.read_csv(pred_file)
         
 
 if __name__ == '__main__':
