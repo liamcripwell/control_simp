@@ -34,14 +34,13 @@ def run_generator(model, test_set, x_col="complex", ctrl_toks=None, max_samples=
         test_set = test_set[:max_samples]
 
     with torch.no_grad():
-        # append control tokens if needed
         input_seqs = test_set if isinstance(test_set, list) else test_set[x_col]
+
+        # prepend control tokens if needed
         if ctrl_toks is not None:
-            input_seqs = []
-            for i, row in test_set.iterrows():
-                tok = row[ctrl_toks] if isinstance(ctrl_toks, str) else ctrl_toks[i]
-                seq = CONTROL_TOKENS[tok] + " " + row.complex
-                input_seqs.append(seq)
+            toks = ctrl_toks if isinstance(ctrl_toks, list) else test_set[ctrl_toks]
+            for i in len(test_set):
+                input_seqs[i] = CONTROL_TOKENS[toks[i]] + " " + input_seqs[i]
 
         # preprocess data
         dm = control_simp.data.bart.BartDataModule(model.tokenizer, hparams=model.hparams)
