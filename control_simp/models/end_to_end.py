@@ -17,7 +17,7 @@ from control_simp.utils import freeze_params, freeze_embeds, lmap, calculate_ble
 CONTROL_TOKENS = ["<ident>", "<para>", "<ssplit>", "<dsplit>"]
 
 
-def prepare_loader(dm, xx, yy, device="cuda", batch_size=16):
+def prepare_loader(dm, xx, yy=None, device="cuda", batch_size=16):
     prep = dm.preprocess(xx, yy)
 
     dataset = TensorDataset(
@@ -29,13 +29,13 @@ def prepare_loader(dm, xx, yy, device="cuda", batch_size=16):
     return loader
 
 
-def run_generator(model, test_set, x_col="complex", y_col="simple", ctrl_toks=None, max_samples=None, device="cuda", batch_size=16):
+def run_generator(model, test_set, x_col="complex", ctrl_toks=None, max_samples=None, device="cuda", batch_size=16):
     if max_samples is not None:
         test_set = test_set[:max_samples]
 
     with torch.no_grad():
         # append control tokens if needed
-        input_seqs = list(test_set[x_col])
+        input_seqs = test_set if isinstance(test_set, list) else test_set[x_col]
         if ctrl_toks is not None:
             input_seqs = []
             for _, row in test_set.iterrows():
@@ -44,11 +44,11 @@ def run_generator(model, test_set, x_col="complex", y_col="simple", ctrl_toks=No
 
         # preprocess data
         dm = control_simp.data.bart.BartDataModule(model.tokenizer, hparams=model.hparams)
-        test_data = prepare_loader(input_seqs, test_set[y_col], device, batch_size)
+        test_data = prepare_loader(dm, input_seqs, device=device, batch_size=batch_size)
 
         pred_ys = []
         for batch in test_data:
-            input_ids, attention_mask, labels = batch
+            input_ids, attention_mask = batch
             generated_ids = model.model.generate(
                 input_ids,
                 attention_mask=attention_mask,
