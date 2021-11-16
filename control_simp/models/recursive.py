@@ -41,3 +41,9 @@ class RecursiveGenerator():
             x_col = step_pred
 
         return df
+
+    def __getattr__(self, name):
+        if name == "tokenizer":
+            return self.gen.tokenizer
+        else:
+            raise AttributeError
