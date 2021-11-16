@@ -189,6 +189,10 @@ class Launcher(object):
 
             test_set.to_csv(eval_file, index=False)
             print(f"Scores written to {eval_file}.")
+
+        end = time.time()
+        elapsed = end - start
+        print(f"Done! (Took {elapsed}s in total)")
         
 
 if __name__ == '__main__':
