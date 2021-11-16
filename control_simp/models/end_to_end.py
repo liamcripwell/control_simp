@@ -23,7 +23,7 @@ def prepare_loader(dm, xx, yy=None, device="cuda", batch_size=16):
     dataset = TensorDataset(
         prep['input_ids'].to(device),
         prep['attention_mask'].to(device),
-        prep['labels'].to(device))
+    )
     loader = DataLoader(dataset, batch_size=batch_size)
 
     return loader
