@@ -38,8 +38,9 @@ def run_generator(model, test_set, x_col="complex", ctrl_toks=None, max_samples=
         input_seqs = test_set if isinstance(test_set, list) else test_set[x_col]
         if ctrl_toks is not None:
             input_seqs = []
-            for _, row in test_set.iterrows():
-                seq = CONTROL_TOKENS[row[ctrl_toks]] + " " + row.complex
+            for i, row in test_set.iterrows():
+                tok = row[ctrl_toks] if isinstance(ctrl_toks, str) else ctrl_toks[i]
+                seq = CONTROL_TOKENS[tok] + " " + row.complex
                 input_seqs.append(seq)
 
         # preprocess data
