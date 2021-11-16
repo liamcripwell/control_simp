@@ -28,7 +28,7 @@ class RecursiveGenerator():
                 print("Generating...")
                 pred_ls = []
                 preds = []
-                for i, row in df.iterrows():
+                for j, row in df.iterrows():
                     # concatenate predicted simplification of each sentence in input
                     xs = sent_tokenize(row[x_col])
                     ls = run_classifier(self.clf, xs, device=self.device, return_logits=False)
