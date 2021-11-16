@@ -153,8 +153,8 @@ class Launcher(object):
     def recursive(self, clf_loc, gen_loc, test_file, out_dir, name, x_col="complex", k=2, max_samples=None, device="cuda", ow=False):
         start = time.time()
 
-        pred_file = f"{out_dir}/{name}_r{k}_preds.csv"
-        eval_file = f"{out_dir}/{name}_r{k}_eval.csv"
+        pred_file = f"{out_dir}/{name}_r_preds.csv"
+        eval_file = f"{out_dir}/{name}_r_eval.csv"
 
         print("Loading data...")
         test_set = pd.read_csv(test_file)

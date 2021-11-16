@@ -21,15 +21,23 @@ class RecursiveGenerator():
 
         for i in range(k):
             print(f"Iteration {i+1}...")
+            step_pred = f"pred_{i+1}"
 
-            preds = []
-            for i, row in df.iterrows():
-                xs = sent_tokenize(row[x_col])
-                l_preds = run_classifier(self.clf, xs, device=self.device, return_logits=False)
-                ys = run_generator(self.gen, xs, ctrl_toks=l_preds)
-                preds.append(" ".join(ys))
+            # skip step if _i_th order predictions already exist
+            if step_pred not in df.columns:
+                print("Generating...")
+                preds = []
+                for i, row in df.iterrows():
+                    # concatenate predicted simplification of each sentence in input
+                    xs = sent_tokenize(row[x_col])
+                    l_preds = run_classifier(self.clf, xs, device=self.device, return_logits=False)
+                    ys = run_generator(self.gen, xs, ctrl_toks=l_preds)
+                    preds.append(" ".join(ys))
+                df[step_pred] = preds
+            else:
+                print("Generation already performed.")
 
-            x_col = f"pred_{i+1}"
-            df[x_col] = preds
+            # treat this step's result as next step's input
+            x_col = step_pred
 
         return df
