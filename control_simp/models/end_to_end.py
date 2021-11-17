@@ -29,7 +29,7 @@ def prepare_loader(dm, xx, yy=None, device="cuda", batch_size=16):
     return loader
 
 
-def run_generator(model, test_set, x_col="complex", ctrl_toks=None, max_samples=None, device="cuda", batch_size=16):
+def run_generator(model, test_set, x_col="complex", ctrl_toks=None, max_samples=None, device="cuda", batch_size=16, ternary=False):
     if max_samples is not None:
         test_set = test_set[:max_samples]
 
@@ -41,7 +41,9 @@ def run_generator(model, test_set, x_col="complex", ctrl_toks=None, max_samples=
             new_seqs = []
             toks = ctrl_toks if isinstance(ctrl_toks, list) else test_set[ctrl_toks].tolist()
             for i in range(len(test_set)):
-                new_seqs.append(CONTROL_TOKENS[toks[i]] + " " + input_seqs[i])
+                tok = toks[i]
+                if ternary: tok = max(tok, 1)
+                new_seqs.append(CONTROL_TOKENS[tok] + " " + input_seqs[i])
             input_seqs = new_seqs
 
         # preprocess data

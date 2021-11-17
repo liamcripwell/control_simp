@@ -89,7 +89,7 @@ def run_evaluation(df, x_col="complex", y_col="simple", pred_col="pred", metrics
 
 class Launcher(object):
 
-    def bart(self, model_loc, test_file, out_dir, name, ctrl_toks=None, max_samples=None, samsa=True, device="cuda", ow=False):
+    def bart(self, model_loc, test_file, out_dir, name, ctrl_toks=None, max_samples=None, samsa=True, device="cuda", ow=False, ternary=False):
         start = time.time()
 
         pred_file = f"{out_dir}/{name}_preds.csv"
@@ -106,7 +106,7 @@ class Launcher(object):
         # run generation on test data
         if ow or not os.path.isfile(pred_file):
             print("Generating predictions...")
-            test_set["pred"] = run_generator(model, test_set, ctrl_toks=ctrl_toks, max_samples=max_samples)
+            test_set["pred"] = run_generator(model, test_set, ctrl_toks=ctrl_toks, max_samples=max_samples, ternary=ternary)
             test_set.to_csv(pred_file, index=False)
             print(f"Predictions written to {pred_file}.")
         else:
@@ -143,10 +143,10 @@ class Launcher(object):
             test_set = test_set[:max_samples]
 
         print("Loading model...")
-        model = LightningBert.load_from_checkpoint(model_loc, model_type="roberta").to("cuda").eval()
+        model = LightningBert.load_from_checkpoint(model_loc, model_type="roberta").to(device).eval()
 
         print("Running predictions...")
-        test_set["pred_l"] = run_classifier(model, test_set, input_col, max_samples=max_samples, device="cuda", return_logits=False)
+        test_set["pred_l"] = run_classifier(model, test_set, input_col, max_samples=max_samples, device=device, return_logits=False)
 
         # check if predictions are correct
         correct = []
