@@ -34,12 +34,12 @@ def run_generator(model, test_set, x_col="complex", ctrl_toks=None, max_samples=
         test_set = test_set[:max_samples]
 
     with torch.no_grad():
-        input_seqs = test_set if isinstance(test_set, list) else test_set[x_col]
+        input_seqs = test_set if isinstance(test_set, list) else test_set[x_col].tolist()
 
         # prepend control tokens if needed
         if ctrl_toks is not None:
             new_seqs = []
-            toks = ctrl_toks if isinstance(ctrl_toks, list) else test_set[ctrl_toks]
+            toks = ctrl_toks if isinstance(ctrl_toks, list) else test_set[ctrl_toks].tolist()
             for i in range(len(test_set)):
                 new_seqs.append(CONTROL_TOKENS[toks[i]] + " " + input_seqs[i])
             input_seqs = new_seqs
