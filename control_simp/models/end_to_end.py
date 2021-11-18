@@ -29,18 +29,22 @@ def prepare_loader(dm, xx, yy=None, device="cuda", batch_size=16):
     return loader
 
 
-def run_generator(model, test_set, x_col="complex", ctrl_toks=None, max_samples=None, device="cuda", batch_size=16):
+def run_generator(model, test_set, x_col="complex", ctrl_toks=None, max_samples=None, device="cuda", batch_size=16, ternary=False):
     if max_samples is not None:
         test_set = test_set[:max_samples]
 
     with torch.no_grad():
-        input_seqs = test_set if isinstance(test_set, list) else test_set[x_col]
+        input_seqs = test_set if isinstance(test_set, list) else test_set[x_col].tolist()
 
         # prepend control tokens if needed
         if ctrl_toks is not None:
-            toks = ctrl_toks if isinstance(ctrl_toks, list) else test_set[ctrl_toks]
+            new_seqs = []
+            toks = ctrl_toks if isinstance(ctrl_toks, list) else test_set[ctrl_toks].tolist()
             for i in range(len(test_set)):
-                input_seqs[i] = CONTROL_TOKENS[toks[i]] + " " + input_seqs[i]
+                tok = toks[i]
+                if ternary: tok = max(tok, 1)
+                new_seqs.append(CONTROL_TOKENS[tok] + " " + input_seqs[i])
+            input_seqs = new_seqs
 
         # preprocess data
         dm = control_simp.data.bart.BartDataModule(model.tokenizer, hparams=model.hparams)

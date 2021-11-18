@@ -7,14 +7,23 @@ import pandas as pd
 from easse.sari import corpus_sari
 from easse.bleu import sentence_bleu
 from easse.samsa import get_samsa_sentence_scores
+from easse.bertscore import get_bertscore_sentence_scores
 
 from control_simp.models.recursive import RecursiveGenerator
 from control_simp.models.end_to_end import run_generator, BartFinetuner
 from control_simp.models.classification import run_classifier, LightningBert
 
+FAST_METRICS = ["sari", "bleu", "bertscore"]
 
-def calculate_bertscore():
-    pass
+
+def calculate_bertscore(yy_, yy):
+    """
+    Compute BERTScore for given prediction/ground-truth pairs (assumes single references).
+    """
+    p, r, f = get_bertscore_sentence_scores(yy_, [yy])
+
+    # return precision sub-metric
+    return p.tolist()
 
 def calculate_bleu(yy_, yy):
     """
@@ -38,6 +47,9 @@ def calculate_samsa(xx, yy_):
 def calculate_metrics(inputs, preds, refs, metrics=["blue", "sari"]):
     """Compute all evaluation metrics for provided data. SAMSA disabled by default."""
     results = {}
+    if "bertscore" in metrics:
+        print("Calculating BERTScores...")
+        results["bertscore"] = calculate_bertscore(preds, refs)
     if "bleu" in metrics:
         print("Calculating BLEUs...")
         results["bleu"] = calculate_bleu(preds, refs)
@@ -46,7 +58,7 @@ def calculate_metrics(inputs, preds, refs, metrics=["blue", "sari"]):
         results["sari"] = calculate_sari(inputs, preds, refs)
     if "samsa" in metrics:
         print("Calculating SAMSAs...")
-        results["samsa"] = calculate_samsa(preds, refs)
+        results["samsa"] = calculate_samsa(inputs, preds)
 
     return results
 
@@ -77,7 +89,7 @@ def run_evaluation(df, x_col="complex", y_col="simple", pred_col="pred", metrics
 
 class Launcher(object):
 
-    def bart(self, model_loc, test_file, out_dir, name, ctrl_toks=None, max_samples=None, samsa=True, device="cuda", ow=False):
+    def bart(self, model_loc, test_file, out_dir, name, ctrl_toks=None, max_samples=None, samsa=True, device="cuda", ow=False, ternary=False):
         start = time.time()
 
         pred_file = f"{out_dir}/{name}_preds.csv"
@@ -94,14 +106,14 @@ class Launcher(object):
         # run generation on test data
         if ow or not os.path.isfile(pred_file):
             print("Generating predictions...")
-            test_set["pred"] = run_generator(model, test_set, ctrl_toks=ctrl_toks, max_samples=max_samples)
+            test_set["pred"] = run_generator(model, test_set, ctrl_toks=ctrl_toks, max_samples=max_samples, ternary=ternary)
             test_set.to_csv(pred_file, index=False)
             print(f"Predictions written to {pred_file}.")
         else:
             test_set = pd.read_csv(pred_file)
 
         print("Evaluating predictions...")
-        metrics = ["bleu", "sari"]
+        metrics = FAST_METRICS
         if samsa:
             metrics.append("samsa")
         if not ow and os.path.isfile(eval_file):
@@ -131,10 +143,10 @@ class Launcher(object):
             test_set = test_set[:max_samples]
 
         print("Loading model...")
-        model = LightningBert.load_from_checkpoint(model_loc, model_type="roberta").to("cuda").eval()
+        model = LightningBert.load_from_checkpoint(model_loc, model_type="roberta").to(device).eval()
 
         print("Running predictions...")
-        test_set["pred_l"] = run_classifier(model, test_set, input_col, max_samples=max_samples, device="cuda", return_logits=False)
+        test_set["pred_l"] = run_classifier(model, test_set, input_col, max_samples=max_samples, device=device, return_logits=False)
 
         # check if predictions are correct
         correct = []
@@ -176,7 +188,7 @@ class Launcher(object):
             test_set = pd.read_csv(eval_file)
 
         for i in range(1, k+1):
-            metrics = ["bleu", "sari"]
+            metrics = FAST_METRICS
             if samsa:
                 metrics.append("samsa")
             metrics = [m for m in metrics if f"{m}_{i}" not in test_set.columns]
