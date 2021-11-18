@@ -1,5 +1,6 @@
 from nltk import sent_tokenize
 
+from control_simp.utils import flatten_list
 from control_simp.models.end_to_end import run_generator, BartFinetuner
 from control_simp.models.classification import run_classifier, LightningBert
 
@@ -26,21 +27,45 @@ class RecursiveGenerator():
             # skip step if _i_th order predictions already exist
             if step_pred not in df.columns:
                 print("Generating...")
+
+                # compile set of individual sentences and C idx
+                xs = []
+                cids = []
+                for j, x in df[x_col].iteritems():
+                    sents = sent_tokenize(x)
+                    xs.append(sents)
+                    cids += [j]*len(sents)
+                xs = flatten_list(xs)
+
+                # run prediction and generation models
+                ls = run_classifier(self.clf, xs, device=self.device, return_logits=False)
+                ys = run_generator(self.gen, xs, ctrl_toks=ls)
+
+                # rebuild full outputs from individual sentences
                 pred_ls = []
                 preds = []
-                for _, row in df.iterrows():
-                    # concatenate predicted simplification of each sentence in input
-                    xs = sent_tokenize(row[x_col])
-                    ls = run_classifier(self.clf, xs, device=self.device, return_logits=False)
-                    pred_ls.append(ls)
-                    ys = run_generator(self.gen, xs, ctrl_toks=ls)
-
+                l_buff = []
+                y_buff = []
+                last_cid = 0
+                for xid, cid in enumerate(cids):
+                    if cid != last_cid:
+                        pred_ls.append(l_buff)
+                        preds.append(" ".join(y_buff))
+                        l_buff = []
+                        y_buff = []
+                    l_buff.append(ls[xid])
                     # forceably use inputs where 0 label predicted
-                    for j in range(len(xs)):
-                        if ls[j] == 0:
-                            ys[j] = xs[j].replace("<ident> ", "")
+                    if ls[xid] == 0:
+                        y_buff.append(xs[xid].replace("<ident> ", ""))
+                    else:
+                        y_buff.append(ys[xid])
+                    last_cid = cid
+                pred_ls.append(l_buff)
+                preds.append(" ".join(y_buff))
+                assert len(pred_ls) == len(df)
+                assert len(preds) == len(df)
 
-                    preds.append(" ".join(ys))
+                # add predictions to dataframe
                 df[f"labels_{i+1}"] = pred_ls
                 df[step_pred] = preds
             else:
