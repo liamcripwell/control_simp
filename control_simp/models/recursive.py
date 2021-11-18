@@ -31,10 +31,10 @@ class RecursiveGenerator():
                 # compile set of individual sentences and C idx
                 xs = []
                 cids = []
-                for i, x in df[x_col].iteritems():
+                for j, x in df[x_col].iteritems():
                     sents = sent_tokenize(x)
                     xs.append(sents)
-                    cids += [i]*len(sents)
+                    cids += [j]*len(sents)
                 xs = flatten_list(xs)
 
                 # run prediction and generation models
