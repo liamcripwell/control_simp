@@ -46,11 +46,11 @@ class RecursiveGenerator():
                 preds = []
                 l_buff = []
                 y_buff = []
+                last_cid = 0
                 for xid, cid in enumerate(cids):
-                    if cid != cids[xid-1]:
+                    if cid != last_cid:
                         pred_ls.append(l_buff)
                         preds.append(" ".join(y_buff))
-                    else:
                         l_buff = []
                         y_buff = []
                     l_buff.append(ls[xid])
@@ -59,6 +59,7 @@ class RecursiveGenerator():
                         y_buff.append(xs[xid].replace("<ident> ", ""))
                     else:
                         y_buff.append(ys[xid])
+                    last_cid = cid
                 pred_ls.append(l_buff)
                 preds.append(" ".join(y_buff))
                 assert len(pred_ls) == len(df)
