@@ -89,7 +89,7 @@ def run_evaluation(df, x_col="complex", y_col="simple", pred_col="pred", metrics
 
 class Launcher(object):
 
-    def bart(self, model_loc, test_file, out_dir, name, ctrl_toks=None, max_samples=None, samsa=True, device="cuda", ow=False, ternary=False):
+    def bart(self, model_loc, test_file, out_dir, name, ctrl_toks=None, max_samples=None, samsa=True, device="cuda", ow=False, num_workers=8, ternary=False):
         start = time.time()
 
         pred_file = f"{out_dir}/{name}_preds.csv"
@@ -106,7 +106,7 @@ class Launcher(object):
         # run generation on test data
         if ow or not os.path.isfile(pred_file):
             print("Generating predictions...")
-            test_set["pred"] = run_generator(model, test_set, ctrl_toks=ctrl_toks, max_samples=max_samples, ternary=ternary)
+            test_set["pred"] = run_generator(model, test_set, ctrl_toks=ctrl_toks, max_samples=max_samples, num_workers=num_workers, ternary=ternary)
             test_set.to_csv(pred_file, index=False)
             print(f"Predictions written to {pred_file}.")
         else:
@@ -162,7 +162,7 @@ class Launcher(object):
         elapsed = end - start
         print(f"Done! (Took {elapsed}s in total)")
 
-    def recursive(self, clf_loc, gen_loc, test_file, out_dir, name, x_col="complex", k=2, max_samples=None, samsa=False, device="cuda", ow=False):
+    def recursive(self, clf_loc, gen_loc, test_file, out_dir, name, x_col="complex", k=2, max_samples=None, samsa=False, device="cuda", ow=False, num_workers=8):
         start = time.time()
 
         pred_file = f"{out_dir}/{name}_rec_preds.csv"

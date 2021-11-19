@@ -7,8 +7,9 @@ from control_simp.models.classification import run_classifier, LightningBert
 
 class RecursiveGenerator():
 
-    def __init__(self, clf_loc, gen_loc, device="cuda"):
+    def __init__(self, clf_loc, gen_loc, device="cuda", num_workers=8):
         self.device = device
+        self.num_workers = num_workers
 
         print("Loading classifier...")
         self.clf = LightningBert.load_from_checkpoint(clf_loc, model_type="roberta").to(device).eval()
@@ -39,7 +40,7 @@ class RecursiveGenerator():
 
                 # run prediction and generation models
                 ls = run_classifier(self.clf, xs, device=self.device, return_logits=False)
-                ys = run_generator(self.gen, xs, ctrl_toks=ls)
+                ys = run_generator(self.gen, xs, ctrl_toks=ls, num_workers=self.num_workers)
 
                 # rebuild full outputs from individual sentences
                 pred_ls = []
