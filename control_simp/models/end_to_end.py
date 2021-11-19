@@ -22,10 +22,14 @@ def prepare_loader(dm, xx, yy=None, device="cuda", batch_size=16, num_workers=8)
     prep = dm.preprocess(xx, yy)
 
     dataset = TensorDataset(
-        prep['input_ids'].to(device),
-        prep['attention_mask'].to(device),
+        prep['input_ids'],
+        prep['attention_mask'],
     )
     loader = DataLoader(dataset, batch_size=batch_size, num_workers=num_workers)
+
+    # move data to device
+    for x in loader:
+        x = x.to(device, non_blocking=True)
 
     return loader
 
