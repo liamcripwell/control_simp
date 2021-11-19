@@ -27,10 +27,6 @@ def prepare_loader(dm, xx, yy=None, device="cuda", batch_size=16, num_workers=8)
     )
     loader = DataLoader(dataset, batch_size=batch_size, num_workers=num_workers)
 
-    # move data to device
-    for x in loader:
-        x = [xi.to(device, non_blocking=True) for xi in x]
-
     return loader
 
 
@@ -62,6 +58,7 @@ def run_generator(model, test_set, x_col="complex", ctrl_toks=None, max_samples=
         # predict output sequences
         pred_ys = []
         for batch in test_data:
+            batch = [xi.to(device, non_blocking=True) for xi in batch]
             input_ids, attention_mask = batch
             generated_ids = model.model.generate(
                 input_ids,
