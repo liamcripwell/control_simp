@@ -14,7 +14,7 @@ import control_simp.data.bart
 from control_simp.utils import freeze_params, freeze_embeds, lmap, calculate_bleu
 
 
-CONTROL_TOKENS = ["<ident>", "<para>", "<ssplit>", "<dsplit>"]
+CONTROL_TOKENS = ["<ident>", "<para>", "<ssplit>", "<dsplit>", "<clf>", "<gen>"]
 
 
 def prepare_loader(dm, xx, yy=None, device="cuda", batch_size=16, num_workers=8):
