@@ -30,27 +30,32 @@ def prepare_loader(dm, xx, yy=None, device="cuda", batch_size=16, num_workers=8)
     return loader
 
 
-def run_generator(model, test_set, x_col="complex", ctrl_toks=None, max_samples=None, device="cuda", batch_size=16, num_workers=8, ternary=False):
+def run_generator(model, test_set, x_col="complex", ctrl_toks=None, max_samples=None, device="cuda", batch_size=16, num_workers=8, op_blacklist=[]):
     if max_samples is not None:
         test_set = test_set[:max_samples]
 
     with torch.no_grad():
         input_seqs = test_set if isinstance(test_set, list) else test_set[x_col].tolist()
 
-        # prepend control tokens if needed
         if ctrl_toks is not None:
+            hold_outs = []
             new_seqs = []
-            toks = ctrl_toks if isinstance(ctrl_toks, list) else test_set[ctrl_toks].tolist()
+            labels = ctrl_toks if isinstance(ctrl_toks, list) else test_set[ctrl_toks].tolist()
             for i in range(len(test_set)):
-                tok = toks[i]
-                if ternary: tok = max(tok, 1)
-                new_seqs.append(CONTROL_TOKENS[tok] + " " + input_seqs[i])
+                if labels[i] in op_blacklist:
+                    # hold out inputs of certain operation type
+                    hold_outs.append(input_seqs[i])
+                else:
+                    hold_outs.append(None)
+                    # prepend control token to input sequence
+                    new_seqs.append(CONTROL_TOKENS[labels[i]] + " " + input_seqs[i])
             input_seqs = new_seqs
 
         # preprocess data
         dm = control_simp.data.bart.BartDataModule(model.tokenizer, hparams=model.hparams)
         test_data = prepare_loader(dm, input_seqs, device=device, batch_size=batch_size, num_workers=num_workers)
 
+        # predict output sequences
         pred_ys = []
         for batch in test_data:
             input_ids, attention_mask = batch
@@ -65,6 +70,15 @@ def run_generator(model, test_set, x_col="complex", ctrl_toks=None, max_samples=
             results = model.ids_to_clean_text(generated_ids)
             
             pred_ys += results
+
+        # recombine predictions with held-out inputs
+        if op_blacklist != []:
+            j = 0
+            for i in range(len(hold_outs)):
+                if hold_outs[i] is None:
+                    hold_outs[i] = pred_ys[j]
+                    j += 1
+            pred_ys = hold_outs
 
     return pred_ys
 
