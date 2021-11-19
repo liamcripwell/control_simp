@@ -78,12 +78,10 @@ class LazyPreproDataset(Dataset):
             else:
                 # load tokenized y sequence if generation task
                 y_ = torch.load(f"{self.data_dir}/{idx}_y.pt")
-
-            tensors = torch.stack([x_, m_, y_])
-
-        item = tuple([t for t in tensors])
-
-        if len(item) < 3:
+                
+            item = (x_, m_, y_)
+        else:
+            item = tuple([t for t in tensors])
             # load tokenized y sequence if standard generation task
             item += (torch.load(f"{self.data_dir}/{idx}_y.pt"),)
 
