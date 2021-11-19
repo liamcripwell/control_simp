@@ -14,7 +14,8 @@ import control_simp.data.bart
 from control_simp.utils import freeze_params, freeze_embeds, lmap, calculate_bleu
 
 
-CONTROL_TOKENS = ["<ident>", "<para>", "<ssplit>", "<dsplit>", "<clf>", "<gen>"]
+CONTROL_TOKENS = ["<ident>", "<para>", "<ssplit>", "<dsplit>"]
+MTL_TOKENS = ["<clf>", "<gen>"]
 
 
 def prepare_loader(dm, xx, yy=None, device="cuda", batch_size=16, num_workers=8):
@@ -124,7 +125,7 @@ class BartFinetuner(pl.LightningModule):
         self.train_losses = []
 
     def add_new_tokens(self):
-        self.tokenizer.add_tokens(CONTROL_TOKENS, special_tokens=True)
+        self.tokenizer.add_tokens(CONTROL_TOKENS + MTL_TOKENS, special_tokens=True)
         self.model.resize_token_embeddings(len(self.tokenizer))
 
     def forward(self, input_ids, **kwargs):
@@ -323,7 +324,7 @@ class BartFinetuner(pl.LightningModule):
         parser.add_argument("--eval_max_gen_length", type=int, default=None)
         parser.add_argument("--train_data_dir", type=str, default=None, required=False,)
         parser.add_argument("--valid_data_dir", type=str, default=None, required=False,)
-        parser.add_argument("--use_ctrl_toks", action="store_true")
+        parser.add_argument("--use_mtl_toks", action="store_true")
         parser.add_argument("--simp_only", action="store_true")
 
         return parser

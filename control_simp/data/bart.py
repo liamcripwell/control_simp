@@ -74,7 +74,7 @@ class BartDataModule(pl.LightningDataModule):
         self.valid_data_dir = self.hparams.valid_data_dir
         self.train_workers = self.hparams.train_workers
         self.collate_fn = pad_collate if self.train_data_dir is not None else None
-        self.use_ctrl_toks = self.hparams.use_ctrl_toks
+        self.use_mtl_toks = self.hparams.use_mtl_toks
         self.simp_only = False if "simp_only" not in self.hparams else self.hparams.simp_only
 
     def prepare_data(self):
@@ -124,20 +124,22 @@ class BartDataModule(pl.LightningDataModule):
         else:
             # get control token ids
             ctrl_tok_ids = None
-            if self.use_ctrl_toks:
+            mtl_tok_ids = None
+            if self.use_mtl_toks:
                 ctrl_tok_ids = torch.tensor(self.tokenizer.convert_tokens_to_ids(control_simp.models.end_to_end.CONTROL_TOKENS))
+                mtl_tok_ids = torch.tensor(self.tokenizer.convert_tokens_to_ids(control_simp.models.end_to_end.MTL_TOKENS))
 
             # prepare lazy loading datasets for pre-tokenized data
             self.train = LazyPreproDataset(
-                self.train, self.train_data_dir, label_col="label", label_tok_ids=ctrl_tok_ids)
+                self.train, self.train_data_dir, label_col="label", ctrl_tok_ids=ctrl_tok_ids, mtl_tok_ids=mtl_tok_ids)
             if self.val_file is not None:
                 self.validate = LazyPreproDataset(
-                    self.validate, self.valid_data_dir, label_col="label", label_tok_ids=ctrl_tok_ids)
+                    self.validate, self.valid_data_dir, label_col="label", ctrl_tok_ids=ctrl_tok_ids, mtl_tok_ids=mtl_tok_ids)
             else:
                 self.validate = LazyPreproDataset(
-                    self.validate, self.train_data_dir, label_col="label", label_tok_ids=ctrl_tok_ids)
+                    self.validate, self.train_data_dir, label_col="label", ctrl_tok_ids=ctrl_tok_ids, mtl_tok_ids=mtl_tok_ids)
             self.test = LazyPreproDataset(
-                self.test, self.train_data_dir, label_col="label", label_tok_ids=ctrl_tok_ids)
+                self.test, self.train_data_dir, label_col="label", ctrl_tok_ids=ctrl_tok_ids, mtl_tok_ids=mtl_tok_ids)
 
     def build_tensor_dataset(self, data):
         return TensorDataset(

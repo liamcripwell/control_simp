@@ -1,3 +1,5 @@
+import random
+
 import torch
 from torch.utils.data import Dataset
 
@@ -46,12 +48,13 @@ class LazyClassifierDataset(Dataset):
 
 class LazyPreproDataset(Dataset):
 
-    def __init__(self, df, data_dir, clf=False, label_col=None, label_tok_ids=None):
+    def __init__(self, df, data_dir, label_col=None, ctrl_tok_ids=None, mtl_tok_ids=None, mtl_rate=0.5):
         self.df = df
         self.data_dir = data_dir
-        self.clf = clf
         self.label_col = label_col
-        self.label_tok_ids = label_tok_ids
+        self.ctrl_tok_ids = ctrl_tok_ids
+        self.mtl_tok_ids = mtl_tok_ids
+        self.mtl_rate = mtl_rate
 
     def __len__(self):
         return len(self.df)
@@ -60,23 +63,34 @@ class LazyPreproDataset(Dataset):
         tensors = torch.load(f"{self.data_dir}/{idx}_x.pt")
 
         # insert control tokens to input if needed
-        if not self.clf and self.label_tok_ids is not None:
-            label = self.df.iloc[idx][self.label_col]
-            x_ = self.insert_control_tok(tensors[0], label)
-            m_ = torch.cat([tensors[1], torch.tensor([1])]) # add 1 token pad to input mask
-            tensors = torch.stack([x_, m_])
+        if self.mtl_tok_ids is not None:
+            # randomly choose task
+            task = 0 if random.uniform(0, 1) < self.mtl_rate else 1
+            x_ = self.insert_mtl_tok(tensors[0], task)
+            m_ = tensors[1]
+
+            # load task appropriate y
+            if task == 0:
+                # construct contrived y sequence for classification task
+                label = self.df.iloc[idx][self.label_col]
+                ctrl_tok = self.ctrl_tok_ids[label]
+                y_ = torch.tensor([0, ctrl_tok, 2]) # a single special-token sequence
+            else:
+                # load tokenized y sequence if generation task
+                y_ = torch.load(f"{self.data_dir}/{idx}_y.pt")
+
+            tensors = torch.stack([x_, m_, y_])
 
         item = tuple([t for t in tensors])
-        if not self.clf:
-            # load tokenized y sequence if generation task
+
+        if len(item) < 3:
+            # load tokenized y sequence if standard generation task
             item += (torch.load(f"{self.data_dir}/{idx}_y.pt"),)
-        else:
-            # load label from df if classification task
-            item += (torch.tensor(self.df.iloc[idx][self.label_col]),)
 
         return item
 
-    def insert_control_tok(self, x, label):
-        # inserts a label-dependent control token into the input sequence
-        control_tok_id = self.label_tok_ids[label]
-        return torch.cat([torch.tensor([0, control_tok_id]), x[1:]])
+    def insert_mtl_tok(self, x, label):
+        # substitute existing operation control-token for mtl-token
+        mtl_tok_id = self.mtl_tok_ids[label]
+        x[1] = mtl_tok_id
+        return x
