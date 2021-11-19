@@ -29,7 +29,7 @@ def prepare_loader(dm, xx, yy=None, device="cuda", batch_size=16, num_workers=8)
 
     # move data to device
     for x in loader:
-        x = x.to(device, non_blocking=True)
+        x = [xi.to(device, non_blocking=True) for xi in x]
 
     return loader
 
@@ -106,7 +106,7 @@ class BartFinetuner(pl.LightningModule):
         tokenizer = BartTokenizer.from_pretrained(
             'facebook/bart-base', add_prefix_space=True)
         self.tokenizer = tokenizer
-        self.add_new_tokens()
+        self.add_new_tokens(old=True)
 
         # load default model args if no hparams specified
         if hparams is None:

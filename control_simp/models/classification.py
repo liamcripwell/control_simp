@@ -29,10 +29,10 @@ def run_classifier(model, test_set, input_col="complex", max_samples=None, devic
 
         # prepare data loader
         features = INPUTS[model.model_type][:-1] # ignore labels
-        dataset = TensorDataset(*[tensor(test[f]) for f in features])
+        dataset = TensorDataset(*[test[f] for f in features])
         test_data = DataLoader(dataset, batch_size=batch_size, num_workers=num_workers)
         for x in test_data:
-            x = x.to(device, non_blocking=True)
+            x = [xi.to(device, non_blocking=True) for xi in x]
 
         # run predictions for each batch
         preds = []
