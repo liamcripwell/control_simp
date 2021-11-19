@@ -138,8 +138,9 @@ class BartFinetuner(pl.LightningModule):
         # training loss cache to log mean every n steps
         self.train_losses = []
 
-    def add_new_tokens(self):
-        self.tokenizer.add_tokens(CONTROL_TOKENS + MTL_TOKENS, special_tokens=True)
+    def add_new_tokens(self, old=False):
+        new = CONTROL_TOKENS if old else CONTROL_TOKENS + MTL_TOKENS
+        self.tokenizer.add_tokens(new, special_tokens=True)
         self.model.resize_token_embeddings(len(self.tokenizer))
 
     def forward(self, input_ids, **kwargs):
