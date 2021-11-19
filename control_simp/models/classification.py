@@ -17,7 +17,7 @@ INPUTS = {
 }
 
 
-def run_classifier(model, test_set, input_col="complex", max_samples=None, device="cuda", batch_size=16, return_logits=True):
+def run_classifier(model, test_set, input_col="complex", max_samples=None, device="cuda", batch_size=16, num_workers=8, return_logits=True):
     if max_samples is not None:
         test_set = test_set[:max_samples]
 
@@ -30,7 +30,7 @@ def run_classifier(model, test_set, input_col="complex", max_samples=None, devic
         # prepare data loader
         features = INPUTS[model.model_type][:-1] # ignore labels
         dataset = TensorDataset(*[test[f].to(device) for f in features])
-        test_data = DataLoader(dataset, batch_size=batch_size)
+        test_data = DataLoader(dataset, batch_size=batch_size, num_workers=num_workers)
 
         # run predictions for each batch
         preds = []

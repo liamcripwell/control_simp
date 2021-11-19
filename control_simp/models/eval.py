@@ -134,7 +134,7 @@ class Launcher(object):
         elapsed = end - start
         print(f"Done! (Took {elapsed}s in total)")
 
-    def clf(self, model_loc, test_file, out_file, input_col="complex", max_samples=None, device="cuda"):
+    def clf(self, model_loc, test_file, out_file, input_col="complex", max_samples=None, device="cuda", num_workers=8):
         start = time.time()
 
         print("Loading data...")
@@ -146,7 +146,7 @@ class Launcher(object):
         model = LightningBert.load_from_checkpoint(model_loc, model_type="roberta").to(device).eval()
 
         print("Running predictions...")
-        test_set["pred_l"] = run_classifier(model, test_set, input_col, max_samples=max_samples, device=device, return_logits=False)
+        test_set["pred_l"] = run_classifier(model, test_set, input_col, max_samples=max_samples, device=device, num_workers=num_workers, return_logits=False)
 
         # check if predictions are correct
         correct = []
@@ -173,7 +173,7 @@ class Launcher(object):
         if max_samples is not None:
             test_set = test_set[:max_samples]
 
-        model = RecursiveGenerator(clf_loc, gen_loc, device=device)
+        model = RecursiveGenerator(clf_loc, gen_loc, device=device, num_workers=num_workers)
 
         # run generation on test data
         if not ow and os.path.isfile(pred_file):

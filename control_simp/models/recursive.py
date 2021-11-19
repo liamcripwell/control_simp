@@ -39,7 +39,7 @@ class RecursiveGenerator():
                 xs = flatten_list(xs)
 
                 # run prediction and generation models
-                ls = run_classifier(self.clf, xs, device=self.device, return_logits=False)
+                ls = run_classifier(self.clf, xs, device=self.device, num_workers=self.num_workers, return_logits=False)
                 ys = run_generator(self.gen, xs, ctrl_toks=ls, num_workers=self.num_workers)
 
                 # rebuild full outputs from individual sentences
