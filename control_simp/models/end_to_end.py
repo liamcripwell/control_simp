@@ -30,7 +30,7 @@ def prepare_loader(dm, xx, yy=None, device="cuda", batch_size=16, num_workers=8)
     return loader
 
 
-def run_generator(model, test_set, x_col="complex", ctrl_toks=None, max_samples=None, device="cuda", batch_size=16, num_workers=8, op_blacklist=[0]):
+def run_generator(model, test_set, x_col="complex", ctrl_toks=None, max_samples=None, device="cuda", batch_size=16, num_workers=8, beams=10, op_blacklist=[0]):
     if max_samples is not None:
         test_set = test_set[:max_samples]
 
@@ -72,7 +72,7 @@ def run_generator(model, test_set, x_col="complex", ctrl_toks=None, max_samples=
                 attention_mask=attention_mask,
                 use_cache=True,
                 decoder_start_token_id=model.decoder_start_token_id,
-                num_beams=model.eval_beams,
+                num_beams=beams,
                 max_length=128,
             )
             results = model.ids_to_clean_text(generated_ids)
