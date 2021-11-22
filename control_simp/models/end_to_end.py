@@ -111,6 +111,7 @@ class BartFinetuner(pl.LightningModule):
             'facebook/bart-base', add_prefix_space=True)
         self.tokenizer = tokenizer
         self.add_new_tokens(mtl=mtl)
+        self.mtl = mtl
 
         # load default model args if no hparams specified
         if hparams is None:
