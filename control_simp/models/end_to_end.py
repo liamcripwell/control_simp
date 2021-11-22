@@ -37,8 +37,8 @@ def run_generator(model, test_set, x_col="complex", ctrl_toks=None, max_samples=
     with torch.no_grad():
         input_seqs = test_set if isinstance(test_set, list) else test_set[x_col].tolist()
 
+        hold_outs = []
         if ctrl_toks is not None:
-            hold_outs = []
             new_seqs = []
             labels = ctrl_toks if isinstance(ctrl_toks, list) else test_set[ctrl_toks].tolist()
             for i in range(len(test_set)):
