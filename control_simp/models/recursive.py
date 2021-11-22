@@ -7,7 +7,7 @@ from control_simp.models.classification import run_classifier, LightningBert
 
 class RecursiveGenerator():
 
-    def __init__(self, clf_loc, gen_loc, device="cuda", num_workers=8):
+    def __init__(self, clf_loc, gen_loc, device="cuda", num_workers=8, mtl=False):
         self.device = device
         self.num_workers = num_workers
 
@@ -15,7 +15,7 @@ class RecursiveGenerator():
         self.clf = LightningBert.load_from_checkpoint(clf_loc, model_type="roberta").to(device).eval()
 
         print("Loading generator...")
-        self.gen = BartFinetuner.load_from_checkpoint(gen_loc, strict=False).to(device).eval()
+        self.gen = BartFinetuner.load_from_checkpoint(gen_loc, mtl=mtl, strict=False).to(device).eval()
 
     def generate(self, df, x_col="complex", k=1, max_samples=None):
         if max_samples is not None:

@@ -91,7 +91,7 @@ class BartFinetuner(pl.LightningModule):
     metric_names = ["bleu"]
     default_val_metric = "bleu"
 
-    def __init__(self, hparams=None):
+    def __init__(self, hparams=None, mtl=False):
         super().__init__()
 
         # load pretained model
@@ -103,7 +103,7 @@ class BartFinetuner(pl.LightningModule):
         tokenizer = BartTokenizer.from_pretrained(
             'facebook/bart-base', add_prefix_space=True)
         self.tokenizer = tokenizer
-        self.add_new_tokens(old=True)
+        self.add_new_tokens(mtl=mtl)
 
         # load default model args if no hparams specified
         if hparams is None:
@@ -139,8 +139,8 @@ class BartFinetuner(pl.LightningModule):
         # training loss cache to log mean every n steps
         self.train_losses = []
 
-    def add_new_tokens(self, old=False):
-        new = CONTROL_TOKENS if old else CONTROL_TOKENS + MTL_TOKENS
+    def add_new_tokens(self, mtl=False):
+        new = CONTROL_TOKENS + MTL_TOKENS if mtl else CONTROL_TOKENS
         self.tokenizer.add_tokens(new, special_tokens=True)
         self.model.resize_token_embeddings(len(self.tokenizer))
 
