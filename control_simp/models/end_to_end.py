@@ -30,7 +30,7 @@ def prepare_loader(dm, xx, yy=None, device="cuda", batch_size=16, num_workers=8)
     return loader
 
 
-def run_generator(model, test_set, x_col="complex", ctrl_toks=None, max_samples=None, device="cuda", batch_size=16, num_workers=8, op_blacklist=[]):
+def run_generator(model, test_set, x_col="complex", ctrl_toks=None, max_samples=None, device="cuda", batch_size=16, num_workers=8, op_blacklist=[0]):
     if max_samples is not None:
         test_set = test_set[:max_samples]
 
