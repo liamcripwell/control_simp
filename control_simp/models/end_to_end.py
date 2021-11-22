@@ -80,7 +80,7 @@ def run_generator(model, test_set, x_col="complex", ctrl_toks=None, max_samples=
             pred_ys += results
 
         # recombine predictions with held-out inputs
-        if op_blacklist != []:
+        if op_blacklist != [] and hold_outs != []:
             j = 0
             for i in range(len(hold_outs)):
                 if hold_outs[i] is None:
