@@ -51,6 +51,13 @@ def run_generator(model, test_set, x_col="complex", ctrl_toks=None, max_samples=
                     new_seqs.append(CONTROL_TOKENS[labels[i]] + " " + input_seqs[i])
             input_seqs = new_seqs
 
+        # add generation task control-token if doing using MTL model
+        if model.mtl:
+            new_seqs = []
+            for i in range(len(test_set)):
+                new_seqs.append("<gen> " + input_seqs[i])
+            input_seqs = new_seqs
+
         # preprocess data
         dm = control_simp.data.bart.BartDataModule(model.tokenizer, hparams=model.hparams)
         test_data = prepare_loader(dm, input_seqs, device=device, batch_size=batch_size, num_workers=num_workers)
