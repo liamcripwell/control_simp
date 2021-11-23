@@ -20,7 +20,8 @@ def calculate_bertscore(yy_, yy):
     """
     Compute BERTScore for given prediction/ground-truth pairs (assumes single references).
     """
-    p, r, f = get_bertscore_sentence_scores(yy_, [yy])
+    if not isinstance(yy[0], list): yy = [[y] for y in yy]
+    p, r, f = get_bertscore_sentence_scores(yy_, yy)
 
     # return precision sub-metric
     return p.tolist()
@@ -29,14 +30,16 @@ def calculate_bleu(yy_, yy):
     """
     Compute BLEU score for given prediction/ground-truth pairs (assumes single references).
     """
-    bleus = [sentence_bleu(yy_[i], [yy[i]]) for i in range(len(yy_))] 
+    if not isinstance(yy[0], list): yy = [[y] for y in yy]
+    bleus = [sentence_bleu(yy_[i], yy[i]) for i in range(len(yy_))] 
     return bleus
 
 def calculate_sari(xx, yy_, yy):
     """
     Compute SARI score for a full set of predictions (assumes single references).
     """
-    saris = [corpus_sari([xx[i]], [yy_[i]], [[yy[i]]]) for i in range(len(xx))]
+    if not isinstance(yy[0], list): yy = [[y] for y in yy]
+    saris = [corpus_sari([xx[i]], [yy_[i]], [yy[i]]) for i in range(len(xx))]
     return saris
 
 def calculate_samsa(xx, yy_):
