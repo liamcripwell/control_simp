@@ -1,3 +1,21 @@
+# wiki-auto end-to-end
+python control_simp/models/eval.py bart /media/liam/data2/control_simp_ckps/365hhh2u/checkpoints/epoch\=3-step\=24175.ckpt \
+/media/liam/data2/discourse_data/simp_clf_data/gen/control_simp_valid_exp1_clf.csv /media/liam/data2/control_simp_ckps/365hhh2u \
+plain --samsa=False --ow=False
+
+python control_simp/models/eval.py bart /media/liam/data2/control_simp_ckps/365hhh2u/checkpoints/epoch\=3-step\=24175.ckpt \
+/media/liam/data2/simp_data/newsela-auto/newsela-auto/ACL2020/test_clf.csv /media/liam/data2/control_simp_ckps/365hhh2u \
+newsela --samsa=False --ow=False
+
+# newsela-auto end-to-end
+python control_simp/models/eval.py bart /media/liam/data2/control_simp_ckps/3md1wk3q/checkpoints/epoch\=12-step\=53183.ckpt \
+/media/liam/data2/discourse_data/simp_clf_data/gen/control_simp_valid_exp1_clf.csv /media/liam/data2/control_simp_ckps/3md1wk3q \
+plain --samsa=False --ow=False
+
+python control_simp/models/eval.py bart /media/liam/data2/control_simp_ckps/3md1wk3q/checkpoints/epoch\=12-step\=53183.ckpt \
+/media/liam/data2/simp_data/newsela-auto/newsela-auto/ACL2020/test_clf.csv /media/liam/data2/control_simp_ckps/3md1wk3q \
+newsela --samsa=False --ow=False
+
 # 4-class end-to-end
 python control_simp/models/eval.py bart /media/liam/data2/control_simp_ckps/3fn5qcza/checkpoints/epoch\=0.ckpt \
 /media/liam/data2/discourse_data/simp_clf_data/gen/control_simp_valid_exp1_clf.csv /media/liam/data2/control_simp_ckps/3fn5qcza \
