@@ -119,7 +119,7 @@ def run_evaluation(df, x_col="complex", y_col="simple", pred_col="pred", metrics
 
 class Launcher(object):
 
-    def bart(self, model_loc, test_file, out_dir, name, ctrl_toks=None, max_samples=None, samsa=True, do_pred=True, device="cuda", ow=False, num_workers=8, mtl=False, beams=10):
+    def bart(self, model_loc, test_file, out_dir, name, pred_col="pred", ctrl_toks=None, max_samples=None, samsa=True, do_pred=True, device="cuda", ow=False, num_workers=8, mtl=False, beams=10):
         start = time.time()
 
         pred_file = f"{out_dir}/{name}_preds.csv"
@@ -156,7 +156,7 @@ class Launcher(object):
             print("Computing all metrics...")
 
         # run evaluation process
-        results = run_evaluation(test_set, metrics=metrics, tokenizer=model.tokenizer)
+        results = run_evaluation(test_set, pred_col=pred_col, metrics=metrics, tokenizer=model.tokenizer)
         for metric, vals in results.items():
             test_set[metric] = vals
 
