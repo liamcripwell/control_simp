@@ -20,7 +20,7 @@ def calculate_bertscore(yy_, yy):
     """
     Compute BERTScore for given prediction/ground-truth pairs (assumes single references).
     """
-    if not isinstance(yy[0], list): yy = [[y] for y in yy]
+    if not isinstance(yy[0], list): yy = [yy]
     p, r, f = get_bertscore_sentence_scores(yy_, yy)
 
     # return precision sub-metric
@@ -113,6 +113,7 @@ class Launcher(object):
             test_set.to_csv(pred_file, index=False)
             print(f"Predictions written to {pred_file}.")
         else:
+            print("Loading existing predictions...")
             test_set = pd.read_csv(pred_file)
 
         print("Evaluating predictions...")
@@ -124,6 +125,8 @@ class Launcher(object):
             test_set = pd.read_csv(eval_file)
             metrics = [m for m in metrics if m not in test_set.columns]
             print(f"New evaluation metrics to be computed: {metrics}")
+        else:
+            print("Computing all metrics...")
 
         # run evaluation process
         results = run_evaluation(test_set, metrics=metrics, tokenizer=model.tokenizer)
