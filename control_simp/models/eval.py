@@ -44,12 +44,12 @@ def calculate_sari(xx, yy_, yy):
     Compute SARI score for a full set of predictions.
     """
     if isinstance(yy[0], list):
-        # e.g. [[0, 1, 2], [0, 1, 2], [0, 1, 2]] --> [[0, 0, 0], [1, 1, 1], [2, 2, 2]]
-        yy = [[y[i] for y in yy] for i in range(len(yy_))]
+        # e.g. [[0, 1, 2], [0, 1, 2], [0, 1, 2]] --> [[[0], [0], [0]], [[1], [1], [1]], [[2], [2], [2]]]
+        yy = [[[y[i]] for y in yy] for i in range(len(yy_))]
     else:
-        yy = [[y] for y in yy]
+        yy = [[[y]] for y in yy]
 
-    saris = [corpus_sari([xx[i]], [yy_[i]], [yy[i]]) for i in range(len(xx))]
+    saris = [corpus_sari([xx[i]], [yy_[i]], yy[i]) for i in range(len(xx))]
     return saris
 
 def calculate_samsa(xx, yy_):
