@@ -112,6 +112,8 @@ class BartFinetuner(pl.LightningModule):
         self.tokenizer = tokenizer
         self.add_new_tokens(mtl=mtl)
         self.mtl = mtl
+        if mtl:
+            print("Model configured to use multi-task learning.")
 
         # load default model args if no hparams specified
         if hparams is None:

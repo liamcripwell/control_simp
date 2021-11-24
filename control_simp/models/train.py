@@ -43,7 +43,8 @@ if __name__ == '__main__':
 
     # prepare data module and trainer class
     if args.checkpoint is None:
-        model = arch_classes["module"](hparams=args)
+        if args.arch == "bart":
+            model = arch_classes["module"](mtl=args.use_mtl_toks, hparams=args)
     else:
         model = arch_classes["module"].load_from_checkpoint(args.checkpoint, hparams=args)
     dm = arch_classes["datam"](model.tokenizer, hparams=args)
