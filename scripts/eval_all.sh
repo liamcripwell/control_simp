@@ -73,11 +73,11 @@ python control_simp/models/eval.py bart /media/liam/data2/control_simp_ckps/25ld
 newsela_oracle --ctrl_toks=label --samsa=False --ow=True
 
 # s2s mtl 33% clf
-python control_simp/models/eval.py bart /media/liam/data2/control_simp_ckps/1uehi0ry/checkpoints/epoch=3-step=96722.ckpt \
+python control_simp/models/eval.py bart /media/liam/data2/control_simp_ckps/1uehi0ry/checkpoints/epoch\=5-step\=150458.ckpt \
 /media/liam/data2/discourse_data/simp_clf_data/gen/control_simp_valid_exp1_clf.csv /media/liam/data2/control_simp_ckps/1uehi0ry \
 plain --samsa=False --ow=True --mtl=True
 
-python control_simp/models/eval.py bart /media/liam/data2/control_simp_ckps/1uehi0ry/checkpoints/epoch\=5-step\=150458.ckpt\
+python control_simp/models/eval.py bart /media/liam/data2/control_simp_ckps/1uehi0ry/checkpoints/epoch\=5-step\=150458.ckpt \
 /media/liam/data2/simp_data/newsela-auto/newsela-auto/ACL2020/test_clf.csv /media/liam/data2/control_simp_ckps/1uehi0ry \
 newsela --samsa=False --ow=True --mtl=True
 
