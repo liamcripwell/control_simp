@@ -18,25 +18,38 @@ FAST_METRICS = ["sari", "bleu", "bertscore"]
 
 def calculate_bertscore(yy_, yy):
     """
-    Compute BERTScore for given prediction/ground-truth pairs (assumes single references).
+    Compute BERTScore for given prediction/ground-truth pairs.
     """
-    p, r, f = get_bertscore_sentence_scores(yy_, [yy])
+    if not isinstance(yy[0], list): yy = [yy]
+    p, r, f = get_bertscore_sentence_scores(yy_, yy)
 
     # return precision sub-metric
     return p.tolist()
 
 def calculate_bleu(yy_, yy):
     """
-    Compute BLEU score for given prediction/ground-truth pairs (assumes single references).
+    Compute BLEU score for given prediction/ground-truth pairs.
     """
-    bleus = [sentence_bleu(yy_[i], [yy[i]]) for i in range(len(yy_))] 
+    if isinstance(yy[0], list):
+        # e.g. [[0, 1, 2], [0, 1, 2], [0, 1, 2]] --> [[0, 0, 0], [1, 1, 1], [2, 2, 2]]
+        yy = [[y[i] for y in yy] for i in range(len(yy_))]
+    else:
+        yy = [[y] for y in yy]
+
+    bleus = [sentence_bleu(yy_[i], yy[i]) for i in range(len(yy_))] 
     return bleus
 
 def calculate_sari(xx, yy_, yy):
     """
-    Compute SARI score for a full set of predictions (assumes single references).
+    Compute SARI score for a full set of predictions.
     """
-    saris = [corpus_sari([xx[i]], [yy_[i]], [[yy[i]]]) for i in range(len(xx))]
+    if isinstance(yy[0], list):
+        # e.g. [[0, 1, 2], [0, 1, 2], [0, 1, 2]] --> [[[0], [0], [0]], [[1], [1], [1]], [[2], [2], [2]]]
+        yy = [[[y[i]] for y in yy] for i in range(len(yy_))]
+    else:
+        yy = [[[y]] for y in yy]
+
+    saris = [corpus_sari([xx[i]], [yy_[i]], yy[i]) for i in range(len(xx))]
     return saris
 
 def calculate_samsa(xx, yy_):
@@ -62,12 +75,12 @@ def calculate_metrics(inputs, preds, refs, metrics=["blue", "sari"]):
 
     return results
 
-def clean_refs(refs, tokenizer):
+def clean_seqs(seqs, tokenizer):
     """
     Apply tokenization and decoding to reference sequences to confirm same format as predictions.
     """
     clean = []
-    for y in refs:
+    for y in seqs:
         y_ids = tokenizer(y)["input_ids"]
         y_ = tokenizer.decode(y_ids, skip_special_tokens=True)
         clean.append(y_)
@@ -80,16 +93,33 @@ def run_evaluation(df, x_col="complex", y_col="simple", pred_col="pred", metrics
     """
     inputs = list(df[x_col])
     preds = list(df[pred_col])
-    refs = list(df[y_col])
+    if y_col in df.columns:
+        refs = list(df[y_col])
+    # handle multi-reference test data
+    elif f"{y_col}_0" in df.columns:
+        i = 0
+        refs = []
+        while True:
+            if f"{y_col}_{i}" in df.columns:
+                refs.append(list(df[f"{y_col}_{i}"]))
+            else:
+                break
+            i += 1
+    else:
+        raise ValueError(f"Could not find column '{y_col}' in data.")
+    
     if tokenizer is not None:
-        refs = clean_refs(refs, tokenizer)
+        if isinstance(refs[0], list):
+            refs = [clean_seqs(refs[0], tokenizer) for i in range(len(refs))]
+        else:
+            refs = clean_seqs(refs, tokenizer)
 
     return calculate_metrics(inputs, preds, refs, metrics=metrics)
 
 
 class Launcher(object):
 
-    def bart(self, model_loc, test_file, out_dir, name, ctrl_toks=None, max_samples=None, samsa=True, do_pred=True, device="cuda", ow=False, num_workers=8, mtl=False, beams=10):
+    def bart(self, model_loc, test_file, out_dir, name, pred_col="pred", ctrl_toks=None, max_samples=None, samsa=True, do_pred=True, device="cuda", ow=False, num_workers=8, mtl=False, beams=10):
         start = time.time()
 
         pred_file = f"{out_dir}/{name}_preds.csv"
@@ -110,6 +140,7 @@ class Launcher(object):
             test_set.to_csv(pred_file, index=False)
             print(f"Predictions written to {pred_file}.")
         else:
+            print("Loading existing predictions...")
             test_set = pd.read_csv(pred_file)
 
         print("Evaluating predictions...")
@@ -121,9 +152,11 @@ class Launcher(object):
             test_set = pd.read_csv(eval_file)
             metrics = [m for m in metrics if m not in test_set.columns]
             print(f"New evaluation metrics to be computed: {metrics}")
+        else:
+            print("Computing all metrics...")
 
         # run evaluation process
-        results = run_evaluation(test_set, metrics=metrics, tokenizer=model.tokenizer)
+        results = run_evaluation(test_set, pred_col=pred_col, metrics=metrics, tokenizer=model.tokenizer)
         for metric, vals in results.items():
             test_set[metric] = vals
 

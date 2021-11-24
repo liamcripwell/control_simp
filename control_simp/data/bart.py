@@ -74,7 +74,7 @@ class BartDataModule(pl.LightningDataModule):
         self.valid_data_dir = self.hparams.valid_data_dir
         self.train_workers = self.hparams.train_workers
         self.collate_fn = pad_collate if self.train_data_dir is not None else None
-        self.use_mtl_toks = self.hparams.use_mtl_toks
+        self.use_mtl_toks = False if "use_mtl_toks" not in self.hparams else self.hparams.use_mtl_toks
         self.simp_only = False if "simp_only" not in self.hparams else self.hparams.simp_only
 
     def prepare_data(self):
