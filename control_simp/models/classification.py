@@ -24,7 +24,7 @@ def run_classifier(model, test_set, input_col="complex", max_samples=None, devic
     with torch.no_grad():
         # preprocess data
         dm = BertDataModule(model.tokenizer, hparams=model.hparams)
-        seqs = test_set if isinstance(test_set, list) else test_set[input_col]
+        seqs = test_set if isinstance(test_set, list) else list(test_set[input_col])
         test = dm.preprocess(seqs)
 
         # prepare data loader
