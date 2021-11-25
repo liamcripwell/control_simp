@@ -184,12 +184,13 @@ class Launcher(object):
         print("Running predictions...")
         test_set["pred_l"] = run_classifier(model, test_set, input_col, max_samples=max_samples, device=device, num_workers=num_workers, return_logits=False)
 
-        # check if predictions are correct
-        correct = []
-        for i, row in test_set[:max_samples].iterrows():
-            correct.append(int(row.pred_l) == int(row.label))
-        test_set["correct"] = correct
-        print(f"Overall accuracy: {test_set['correct'].sum() / len(test_set)}")
+        if "label" in test_set.columns:
+            # check if predictions are correct
+            correct = []
+            for i, row in test_set[:max_samples].iterrows():
+                correct.append(int(row.pred_l) == int(row.label))
+            test_set["correct"] = correct
+            print(f"Overall accuracy: {test_set['correct'].sum() / len(test_set)}")
 
         test_set.to_csv(out_file, index=False)
         print(f"Predictions written to {out_file}.")
