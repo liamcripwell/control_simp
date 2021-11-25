@@ -75,15 +75,17 @@ def calculate_metrics(inputs, preds, refs, metrics=["blue", "sari"]):
 
     return results
 
-def clean_seqs(seqs, tokenizer):
+def clean_seqs(seqs, tokenizer=None):
     """
     Apply tokenization and decoding to reference sequences to confirm same format as predictions.
     """
     clean = []
     for y in seqs:
-        y_ids = tokenizer(y)["input_ids"]
-        y_ = tokenizer.decode(y_ids, skip_special_tokens=True)
-        clean.append(y_)
+        y = y.replace("<SEP> ", "")
+        if tokenizer is not None:
+            y_ids = tokenizer(y)["input_ids"]
+            y = tokenizer.decode(y_ids, skip_special_tokens=True)
+        clean.append(y)
 
     return clean
 
@@ -108,11 +110,10 @@ def run_evaluation(df, x_col="complex", y_col="simple", pred_col="pred", metrics
     else:
         raise ValueError(f"Could not find column '{y_col}' in data.")
     
-    if tokenizer is not None:
-        if isinstance(refs[0], list):
-            refs = [clean_seqs(refs[0], tokenizer) for i in range(len(refs))]
-        else:
-            refs = clean_seqs(refs, tokenizer)
+    if isinstance(refs[0], list):
+        refs = [clean_seqs(refs[0], tokenizer) for i in range(len(refs))]
+    else:
+        refs = clean_seqs(refs, tokenizer)
 
     return calculate_metrics(inputs, preds, refs, metrics=metrics)
 
