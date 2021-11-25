@@ -85,7 +85,7 @@ def clean_seqs(seqs, tokenizer=None):
         if tokenizer is not None:
             y_ids = tokenizer(y)["input_ids"]
             y = tokenizer.decode(y_ids, skip_special_tokens=True)
-        clean.append(y)
+        clean.append(y.lower())
 
     return clean
 
@@ -114,6 +114,8 @@ def run_evaluation(df, x_col="complex", y_col="simple", pred_col="pred", metrics
         refs = [clean_seqs(refs[0], tokenizer) for i in range(len(refs))]
     else:
         refs = clean_seqs(refs, tokenizer)
+    inputs = clean_seqs(inputs, tokenizer)
+    preds = clean_seqs(preds, tokenizer)
 
     return calculate_metrics(inputs, preds, refs, metrics=metrics)
 
