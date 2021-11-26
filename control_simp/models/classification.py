@@ -108,23 +108,17 @@ class LightningBert(pl.LightningModule):
         output = self.model(**_batch, return_dict=True)
 
         loss, _ = extract_results(output)
-
+        self.train_losses.append(loss)
         output = {"loss": loss}
 
         # wandb logging
-        self.train_losses.append(loss)
-        train_inter = math.ceil(self.train_check_interval * self.trainer.num_training_batches)
+        train_inter = int(self.hparams.train_check_interval * self.trainer.num_training_batches)
         if batch_idx % train_inter == 0:
             avg_loss = torch.stack(self.train_losses).mean()
             self.logger.experiment.log({
                 'train_loss': avg_loss
             })
             self.train_losses = []
-        sys_inter = math.ceil(self.sys_log_interval * self.trainer.num_training_batches)
-        if sys_inter > 0 and batch_idx % sys_inter == 0:
-            self.logger.experiment.log({
-                'cpu_memory_use': psutil.virtual_memory().percent
-            })
 
         return output
 
