@@ -225,5 +225,6 @@ class LightningBert(pl.LightningModule):
         parser.add_argument("--train_split", type=float, default=0.9)
         parser.add_argument("--val_split", type=float, default=0.05)
         parser.add_argument("--val_file", type=str, default=None, required=False)
+        parser.add_argument("--simp_only", action="store_true")
 
         return parser

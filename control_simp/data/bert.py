@@ -53,9 +53,11 @@ class BertDataModule(pl.LightningDataModule):
             self.train_split = self.hparams.train_split  # default split will be 90/5/5
             self.val_split = min(self.hparams.val_split, 1 - self.train_split)
             self.val_file = self.hparams.val_file
-            # self.train_workers = self.hparams.train_workers
+            self.train_workers = self.hparams.train_workers
+            self.simp_only = False if "simp_only" not in self.hparams else self.hparams.simp_only
 
             self.model_type = self.hparams.model_type
+
 
     def prepare_data(self):
         # NOTE: shouldn't assign state in here
@@ -63,11 +65,20 @@ class BertDataModule(pl.LightningDataModule):
 
     def setup(self, stage):
         self.data = pd.read_csv(self.data_file)
-        # self.data = self.data[:min(self.max_samples, len(self.data))]
+        if self.simp_only:
+            print("Skipping 0 labels...")
+            print(f"Original training samples: {len(self.data)}")
+            self.data = self.data[self.data.label != 0]
+            print(f"Selected training samples: {len(self.data)}")
         self.data = self.data.sample(frac=1)[:min(self.max_samples, len(self.data))] # NOTE: this will actually exclude the last item
         if self.val_file is not None:
             print("Loading specific validation samples...")
             self.validate = pd.read_csv(self.val_file)
+            if self.simp_only:
+                print("Skipping 0 labels...")
+                print(f"Original validation samples: {len(self.validate)}")
+                self.validate = self.validate[self.validate.label != 0]
+                print(f"Selected validation samples: {len(self.validate)}")
         print("All data loaded.")
 
         # train, validation, test split
