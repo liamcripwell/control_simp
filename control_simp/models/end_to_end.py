@@ -158,10 +158,21 @@ class BartFinetuner(pl.LightningModule):
         return self.model(input_ids, **kwargs)
 
     def training_step(self, batch, batch_idx):
-        loss_tensors = self._step(batch)
-        logs = {name: loss for name, loss in zip(self.loss_names, loss_tensors)}
+        if self.mtl:
+            # prepare batch for each task
+            batch_gen = batch[:3]
+            batch_clf = batch[:2] + batch[-1:]
 
-        self.train_losses.append(loss_tensors[0])
+            # add task control-token to inputs
+
+            # perform individual tasks and combine loss
+            gen_loss = self._step(batch_gen)[0]
+            clf_loss = self._step(batch_clf)[0]
+            loss = (1-self.hparams.mtl_weight)*gen_loss + self.hparams.mtl_weight*clf_loss
+        else:
+            loss = self._step(batch)[0]
+
+        self.train_losses.append(loss)
 
         # wandb log
         if batch_idx % int(self.hparams.train_check_interval * self.trainer.num_training_batches) == 0:
@@ -169,13 +180,7 @@ class BartFinetuner(pl.LightningModule):
             self.logger.experiment.log({'train_loss': avg_loss})
             self.train_losses = []
 
-        if self.hparams.sys_log_interval > 0:
-            if batch_idx % int(self.hparams.sys_log_interval * self.trainer.num_training_batches) == 0:
-                self.logger.experiment.log({
-                    'cpu_memory_use': psutil.virtual_memory().percent
-                })
-
-        return {"loss": loss_tensors[0]} #, "log": logs}
+        return {"loss": loss}
 
     def _step(self, batch):
         input_ids, attention_mask, labels = batch
@@ -351,6 +356,7 @@ class BartFinetuner(pl.LightningModule):
         parser.add_argument("--train_data_dir", type=str, default=None, required=False,)
         parser.add_argument("--valid_data_dir", type=str, default=None, required=False,)
         parser.add_argument("--use_mtl_toks", action="store_true")
+        parser.add_argument("--mtl_weight", type=float, default=0.5)
         parser.add_argument("--simp_only", action="store_true")
 
         return parser
