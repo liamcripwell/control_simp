@@ -61,8 +61,14 @@ def extract_results(output):
 
 class LightningBert(pl.LightningModule):
 
-    def __init__(self, hparams, model_type=None, pt_model=None, num_labels=4):
+    def __init__(self, hparams=None, model_type=None, pt_model=None, num_labels=4):
         super().__init__()
+
+        # load default model args if no hparams specified
+        if hparams is None:
+            parser = argparse.ArgumentParser()
+            parser = self.add_model_specific_args(parser)
+            hparams, _ = parser.parse_known_args()
 
         # resolve model type and pretrained base
         if model_type is None:
