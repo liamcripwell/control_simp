@@ -48,13 +48,12 @@ class LazyClassifierDataset(Dataset):
 
 class LazyPreproDataset(Dataset):
 
-    def __init__(self, df, data_dir, label_col=None, ctrl_tok_ids=None, mtl_tok_ids=None, mtl_rate=0.5):
+    def __init__(self, df, data_dir, label_col=None, ctrl_tok_ids=None, mtl_tok_ids=None):
         self.df = df
         self.data_dir = data_dir
         self.label_col = label_col
         self.ctrl_tok_ids = ctrl_tok_ids
         self.mtl_tok_ids = mtl_tok_ids
-        self.mtl_rate = mtl_rate
 
     def __len__(self):
         return len(self.df)
@@ -64,22 +63,18 @@ class LazyPreproDataset(Dataset):
 
         # insert control tokens to input if needed
         if self.mtl_tok_ids is not None:
-            # randomly choose task
-            task = 0 if random.uniform(0, 1) < self.mtl_rate else 1
-            x_ = self.insert_mtl_tok(tensors[0], task)
+            x_ = tensors[0]
             m_ = tensors[1]
 
-            # load task appropriate y
-            if task == 0:
-                # construct contrived y sequence for classification task
-                label = self.df.iloc[idx][self.label_col]
-                ctrl_tok = self.ctrl_tok_ids[label]
-                y_ = torch.tensor([0, ctrl_tok, 2]) # a single special-token sequence
-            else:
-                # load tokenized y sequence if generation task
-                y_ = torch.load(f"{self.data_dir}/{idx}_y.pt")
+            # load tokenized y sequence if generation task
+            y_ = torch.load(f"{self.data_dir}/{idx}_y.pt")
+
+            # construct contrived y sequence for classification task
+            label = self.df.iloc[idx][self.label_col]
+            ctrl_tok = self.ctrl_tok_ids[label]
+            l_ = torch.tensor([0, ctrl_tok, 2]) # a single special-token sequence
                 
-            item = (x_, m_, y_)
+            item = (x_, m_, y_, l_)
         else:
             item = tuple([t for t in tensors])
             # load tokenized y sequence if standard generation task
