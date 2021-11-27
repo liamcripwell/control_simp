@@ -165,7 +165,7 @@ class BartFinetuner(pl.LightningModule):
             assert len(batch) == 5
             # prepare batch for each task
             batch_gen = batch[:3]
-            batch_clf = batch[:2] + batch[-2:] # copy input tensor before transforms
+            batch_clf = (batch[3], batch[1], batch[4]) # copy input tensor before transforms
 
             # generation task
             gen_loss = self._step(batch_gen)[0]
