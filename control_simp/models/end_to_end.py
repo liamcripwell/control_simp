@@ -221,6 +221,7 @@ class BartFinetuner(pl.LightningModule):
         return (loss,)
 
     def validation_step(self, batch, batch_idx) -> Dict:
+        batch = batch[:3] # enforce generation task
         if self.skip_val_gen:
             loss_tensors = self._step(batch)
             val_results = {name: loss for name, loss in zip(self.loss_names, loss_tensors)}
