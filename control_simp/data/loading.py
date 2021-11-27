@@ -64,6 +64,7 @@ class LazyPreproDataset(Dataset):
         # insert control tokens to input if needed
         if self.mtl_tok_ids is not None:
             x_= self.insert_mtl_tok(tensors[0], 1) # add the generation ctrl-token by default
+            z_= self.insert_mtl_tok(tensors[0], 0)
             m_ = tensors[1]
 
             # load tokenized y sequence if generation task
@@ -74,7 +75,7 @@ class LazyPreproDataset(Dataset):
             ctrl_tok = self.ctrl_tok_ids[label]
             l_ = torch.tensor([0, ctrl_tok, 2]) # a single special-token sequence
                 
-            item = (x_, m_, y_, l_)
+            item = (x_, m_, y_, z_, l_)
         else:
             item = tuple([t for t in tensors])
             # load tokenized y sequence if standard generation task

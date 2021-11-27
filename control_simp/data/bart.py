@@ -47,14 +47,15 @@ def pad_collate(batch):
     if len(batch[0]) == 3:
         (xx, mm, yy) = zip(*batch)
     else:
-        (xx, mm, yy, ll) = zip(*batch)
+        (xx, mm, yy, zz, ll) = zip(*batch)
 
     xx_pad = pad_sequence(xx, batch_first=True, padding_value=1)
     mm_pad = pad_sequence(mm, batch_first=True, padding_value=0)
     yy_pad = pad_sequence(yy, batch_first=True, padding_value=1)
-    if len(batch[0]) == 4:
+    if len(batch[0]) == 5:
+        zz_pad = pad_sequence(zz, batch_first=True, padding_value=1)
         ll_pad = pad_sequence(ll, batch_first=True, padding_value=1)
-        return xx_pad, mm_pad, yy_pad, ll_pad
+        return xx_pad, mm_pad, yy_pad, zz_pad, ll_pad
     else:
         return xx_pad, mm_pad, yy_pad
 
