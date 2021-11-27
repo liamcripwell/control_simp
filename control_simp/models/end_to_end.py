@@ -164,14 +164,14 @@ class BartFinetuner(pl.LightningModule):
         if self.mtl:
             # prepare batch for each task
             batch_gen = batch[:3]
-            batch_clf = (batch_gen[0].detach().clone(), batch[1], batch[3]) # copy input tensor before transforms
+            batch_clf = (batch_gen[:,0].detach().clone(), batch[1], batch[3]) # copy input tensor before transforms
 
             # generation task
             gen_loss = self._step(batch_gen)[0]
             self.gen_losses.append(gen_loss)
 
             # add task control-token to clf inputs
-            batch_clf[0][1] = self.mtl_tok_ids[0]
+            batch_clf[:,1] = self.mtl_tok_ids[0]
             clf_loss = self._step(batch_clf)[0]
             self.clf_losses.append(clf_loss)
 
