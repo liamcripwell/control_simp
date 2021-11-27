@@ -44,13 +44,19 @@ def pretokenize(model, data, save_dir, x_col="complex", y_col="simple", max_samp
             i += 1
 
 def pad_collate(batch):
-    (xx, mm, yy) = zip(*batch)
+    if len(batch) == 3:
+        (xx, mm, yy) = zip(*batch)
+    else:
+        (xx, mm, yy, ll) = zip(*batch)
 
     xx_pad = pad_sequence(xx, batch_first=True, padding_value=1)
     mm_pad = pad_sequence(mm, batch_first=True, padding_value=0)
     yy_pad = pad_sequence(yy, batch_first=True, padding_value=1)
-
-    return xx_pad, mm_pad, yy_pad
+    if len(batch) == 4:
+        ll_pad = pad_sequence(ll, batch_first=True, padding_value=1)
+        return xx_pad, mm_pad, yy_pad, ll_pad
+    else:
+        return xx_pad, mm_pad, yy_pad
 
 
 class BartDataModule(pl.LightningDataModule):
