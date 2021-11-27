@@ -63,7 +63,7 @@ class LazyPreproDataset(Dataset):
 
         # insert control tokens to input if needed
         if self.mtl_tok_ids is not None:
-            x_ = tensors[0]
+            x_= self.insert_mtl_tok(tensors[0], 1) # add the generation ctrl-token by default
             m_ = tensors[1]
 
             # load tokenized y sequence if generation task

@@ -113,6 +113,7 @@ class BartFinetuner(pl.LightningModule):
         self.add_new_tokens(mtl=mtl)
         self.mtl = mtl
         if mtl:
+            self.mtl_tok_ids = torch.tensor(self.tokenizer.convert_tokens_to_ids(MTL_TOKENS))
             print("Model configured to use multi-task learning.")
 
         # load default model args if no hparams specified
@@ -148,6 +149,8 @@ class BartFinetuner(pl.LightningModule):
 
         # training loss cache to log mean every n steps
         self.train_losses = []
+        self.gen_losses = []
+        self.clf_losses = []
 
     def add_new_tokens(self, mtl=False):
         new = CONTROL_TOKENS + MTL_TOKENS if mtl else CONTROL_TOKENS
@@ -162,12 +165,18 @@ class BartFinetuner(pl.LightningModule):
             # prepare batch for each task
             batch_gen = batch[:3]
             batch_clf = batch[:2] + batch[-1:]
+            batch_clf[0] = torch.tensor(list(batch_gen[0])) # copy tensor before transforms
 
-            # add task control-token to inputs
-
-            # perform individual tasks and combine loss
+            # generation task
             gen_loss = self._step(batch_gen)[0]
+            self.gen_losses.append(gen_loss)
+
+            # add task control-token to clf inputs
+            batch_clf[0][1] = self.mtl_tok_ids[0]
             clf_loss = self._step(batch_clf)[0]
+            self.clf_losses.append(clf_loss)
+
+            # combine task losses
             loss = (1-self.hparams.mtl_weight)*gen_loss + self.hparams.mtl_weight*clf_loss
         else:
             loss = self._step(batch)[0]
@@ -177,7 +186,16 @@ class BartFinetuner(pl.LightningModule):
         # wandb log
         if batch_idx % int(self.hparams.train_check_interval * self.trainer.num_training_batches) == 0:
             avg_loss = torch.stack(self.train_losses).mean()
-            self.logger.experiment.log({'train_loss': avg_loss})
+            logs = {'train_loss': avg_loss}
+
+            # log MTL individual losses
+            if self.mtl:
+                logs["train_gen_loss"] = torch.stack(self.gen_losses).mean()
+                logs["train_clf_loss"] = torch.stack(self.clf_losses).mean()
+                self.gen_losses = []
+                self.clf_losses = []
+
+            self.logger.experiment.log(logs)
             self.train_losses = []
 
         return {"loss": loss}
