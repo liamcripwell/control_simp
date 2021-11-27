@@ -162,9 +162,10 @@ class BartFinetuner(pl.LightningModule):
 
     def training_step(self, batch, batch_idx):
         if self.mtl:
+            assert len(batch) == 4
             # prepare batch for each task
             batch_gen = batch[:3]
-            batch_clf = (batch_gen[:,0].detach().clone(), batch[1], batch[3]) # copy input tensor before transforms
+            batch_clf = (batch_gen[0].detach().clone(), batch[1], batch[3]) # copy input tensor before transforms
 
             # generation task
             gen_loss = self._step(batch_gen)[0]
