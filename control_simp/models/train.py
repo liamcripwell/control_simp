@@ -49,7 +49,7 @@ if __name__ == '__main__':
             model = arch_classes["module"](hparams=args)
     else:
         if args.arch == "bart":
-            model = arch_classes["module"].load_from_checkpoint(args.checkpoint, mtl=args.use_mtl_args, hparams=args)
+            model = arch_classes["module"].load_from_checkpoint(args.checkpoint, mtl=args.use_mtl_toks, hparams=args)
         else:
             model = arch_classes["module"].load_from_checkpoint(args.checkpoint, hparams=args)
     dm = arch_classes["datam"](model.tokenizer, hparams=args)
