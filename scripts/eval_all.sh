@@ -77,7 +77,7 @@ newsela_oracle --ctrl_toks=label --samsa=False --ow=True
 
 # 3-class ctrl-token
 python control_simp/models/eval.py bart /media/liam/data2/control_simp_ckps/25ldpr2h/checkpoints/epoch\=8-step\=170317.ckpt \
-/media/liam/data2/discourse_data/simp_clf_data/gen/control_simp_valid_exp1_clf.csv /media/liam/data2/control_simp_ckps/25ldpr2h \
+/media/liam/data2/discourse_data/simp_clf_data/gen/control_simp_valid_exp1_3clf.csv /media/liam/data2/control_simp_ckps/25ldpr2h \
 clf --ctrl_toks=pred_l --samsa=False --ow=True
 
 python control_simp/models/eval.py bart /media/liam/data2/control_simp_ckps/25ldpr2h/checkpoints/epoch\=8-step\=170317.ckpt \
@@ -108,4 +108,13 @@ plain --samsa=False --ow=True --mtl=True
 
 python control_simp/models/eval.py bart /media/liam/data2/control_simp_ckps/22jcjfjs/checkpoints/epoch\=6-step\=188072.ckpt \
 /media/liam/data2/simp_data/newsela-auto/newsela-auto/ACL2020/test_clf.csv /media/liam/data2/control_simp_ckps/22jcjfjs \
+newsela --samsa=False --ow=True --mtl=True
+
+# mtl 33% clf
+python control_simp/models/eval.py bart /media/liam/data2/control_simp_ckps/1pwvptpp/checkpoints/epoch=1-step=96722-v1.ckpt \
+/media/liam/data2/discourse_data/simp_clf_data/gen/control_simp_valid_exp1_clf.csv /media/liam/data2/control_simp_ckps/1pwvptpp \
+plain --samsa=False --ow=True --mtl=True
+
+python control_simp/models/eval.py bart /media/liam/data2/control_simp_ckps/1pwvptpp/checkpoints/epoch=1-step=96722-v1.ckpt \
+/media/liam/data2/simp_data/newsela-auto/newsela-auto/ACL2020/test_clf.csv /media/liam/data2/control_simp_ckps/1pwvptpp \
 newsela --samsa=False --ow=True --mtl=True
