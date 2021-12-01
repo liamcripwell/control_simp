@@ -44,13 +44,20 @@ def pretokenize(model, data, save_dir, x_col="complex", y_col="simple", max_samp
             i += 1
 
 def pad_collate(batch):
-    (xx, mm, yy) = zip(*batch)
+    if len(batch[0]) == 3:
+        (xx, mm, yy) = zip(*batch)
+    else:
+        (xx, mm, yy, zz, ll) = zip(*batch)
 
     xx_pad = pad_sequence(xx, batch_first=True, padding_value=1)
     mm_pad = pad_sequence(mm, batch_first=True, padding_value=0)
     yy_pad = pad_sequence(yy, batch_first=True, padding_value=1)
-
-    return xx_pad, mm_pad, yy_pad
+    if len(batch[0]) == 5:
+        zz_pad = pad_sequence(zz, batch_first=True, padding_value=1)
+        ll_pad = pad_sequence(ll, batch_first=True, padding_value=1)
+        return xx_pad, mm_pad, yy_pad, zz_pad, ll_pad
+    else:
+        return xx_pad, mm_pad, yy_pad
 
 
 class BartDataModule(pl.LightningDataModule):
@@ -134,12 +141,12 @@ class BartDataModule(pl.LightningDataModule):
                 self.train, self.train_data_dir, label_col="label", ctrl_tok_ids=ctrl_tok_ids, mtl_tok_ids=mtl_tok_ids)
             if self.val_file is not None:
                 self.validate = LazyPreproDataset(
-                    self.validate, self.valid_data_dir, label_col="label", ctrl_tok_ids=ctrl_tok_ids, mtl_tok_ids=mtl_tok_ids, mtl_rate=0.0)
+                    self.validate, self.valid_data_dir, label_col="label", ctrl_tok_ids=ctrl_tok_ids, mtl_tok_ids=mtl_tok_ids)
             else:
                 self.validate = LazyPreproDataset(
-                    self.validate, self.train_data_dir, label_col="label", ctrl_tok_ids=ctrl_tok_ids, mtl_tok_ids=mtl_tok_ids, mtl_rate=0.0)
+                    self.validate, self.train_data_dir, label_col="label", ctrl_tok_ids=ctrl_tok_ids, mtl_tok_ids=mtl_tok_ids)
             self.test = LazyPreproDataset(
-                self.test, self.train_data_dir, label_col="label", ctrl_tok_ids=ctrl_tok_ids, mtl_tok_ids=mtl_tok_ids, mtl_rate=0.0)
+                self.test, self.train_data_dir, label_col="label", ctrl_tok_ids=ctrl_tok_ids, mtl_tok_ids=mtl_tok_ids)
 
     def build_tensor_dataset(self, data):
         return TensorDataset(
