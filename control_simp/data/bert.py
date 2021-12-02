@@ -53,7 +53,7 @@ class BertDataModule(pl.LightningDataModule):
             self.train_split = self.hparams.train_split  # default split will be 90/5/5
             self.val_split = min(self.hparams.val_split, 1 - self.train_split)
             self.val_file = self.hparams.val_file
-            self.train_workers = self.hparams.train_workers
+            self.train_workers = 1 if "train_workers" not in self.hparams else self.hparams.train_workers
             self.simp_only = False if "simp_only" not in self.hparams else self.hparams.simp_only
 
             self.model_type = self.hparams.model_type
