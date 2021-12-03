@@ -1,6 +1,7 @@
 
 import os
 import time
+from datetime import datetime
 
 import fire
 import pandas as pd
@@ -124,6 +125,7 @@ class Launcher(object):
 
     def bart(self, model_loc, test_file, out_dir, name, pred_col="pred", ctrl_toks=None, max_samples=None, samsa=True, do_pred=True, device="cuda", ow=False, num_workers=8, mtl=False, beams=10):
         start = time.time()
+        print(f"Starting time: {datetime.now()}")
 
         pred_file = f"{out_dir}/{name}_preds.csv"
         eval_file = f"{out_dir}/{name}_eval.csv"
@@ -169,9 +171,11 @@ class Launcher(object):
         end = time.time()
         elapsed = end - start
         print(f"Done! (Took {elapsed}s in total)")
+        print(f"End time: {datetime.now()}")
 
     def clf(self, model_loc, test_file, out_file, input_col="complex", max_samples=None, device="cuda", num_workers=8):
         start = time.time()
+        print(f"Starting time: {datetime.now()}")
 
         print("Loading data...")
         test_set = pd.read_csv(test_file)
@@ -198,6 +202,7 @@ class Launcher(object):
         end = time.time()
         elapsed = end - start
         print(f"Done! (Took {elapsed}s in total)")
+        print(f"End time: {datetime.now()}")
 
     def recursive(self, clf_loc, gen_loc, test_file, out_dir, name, x_col="complex", k=2, max_samples=None, samsa=False, device="cuda", ow=False, num_workers=8):
         start = time.time()
