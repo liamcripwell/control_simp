@@ -111,10 +111,9 @@ class BartMultiHead(BartForConditionalGeneration):
             output_hidden_states=output_hidden_states,
             return_dict=return_dict,
         )
-        hidden_states = outputs[0]  # last hidden state
 
         # generation task
-        lm_logits = self.lm_head(hidden_states) + self.final_logits_bias
+        lm_logits = self.lm_head(outputs[0]) + self.final_logits_bias
 
         masked_lm_loss = None
         if y_seqs is not None:
@@ -138,6 +137,7 @@ class BartMultiHead(BartForConditionalGeneration):
         )
 
         # classification task
+        hidden_states = outputs[0].copy()  # last hidden state
         eos_mask = input_ids.eq(self.config.eos_token_id)
 
         if len(torch.unique_consecutive(eos_mask.sum(1))) > 1:
