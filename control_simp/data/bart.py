@@ -127,9 +127,9 @@ class BartDataModule(pl.LightningDataModule):
                 self.train = self.build_tensor_dataset(self.preprocess(
                     list(self.train[self.x_col]), list(self.train[self.y_col]), list(self.train["label"])))
                 self.validate = self.build_tensor_dataset(self.preprocess(
-                    list(self.validate[self.x_col]), list(self.validate[self.y_col]), list(self.train["label"])))
+                    list(self.validate[self.x_col]), list(self.validate[self.y_col]), list(self.validate["label"])))
                 self.test = self.build_tensor_dataset(self.preprocess(
-                    list(self.test[self.x_col]), list(self.test[self.y_col]), list(self.train["label"])))
+                    list(self.test[self.x_col]), list(self.test[self.y_col]), list(self.test["label"])))
             else:
                 self.train = self.build_tensor_dataset(self.preprocess(
                     list(self.train[self.x_col]), list(self.train[self.y_col])))
