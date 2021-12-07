@@ -10,6 +10,7 @@ from torch.utils.data import DataLoader, TensorDataset
 from transformers import BartTokenizer, BartForConditionalGeneration
 
 import control_simp.data.bart
+from control_simp.models.multi import BartMultiHead
 from control_simp.utils import freeze_params, freeze_embeds, lmap, calculate_bleu
 
 
@@ -100,26 +101,13 @@ class BartFinetuner(pl.LightningModule):
     def __init__(self, hparams=None, mtl=False):
         super().__init__()
 
-        # load pretained model
-        bart_model = BartForConditionalGeneration.from_pretrained(
-            "facebook/bart-base", return_dict=True)
-        self.model = bart_model
-
-        # load pretained tokenizer and add new control tokens to vocab
-        tokenizer = BartTokenizer.from_pretrained(
-            'facebook/bart-base', add_prefix_space=True)
-        self.tokenizer = tokenizer
-        self.add_new_tokens(mtl=mtl)
-        self.mtl = mtl
-        if mtl:
-            self.mtl_tok_ids = torch.tensor(self.tokenizer.convert_tokens_to_ids(MTL_TOKENS))
-            print("Model configured to use multi-task learning.")
-
         # load default model args if no hparams specified
         if hparams is None:
             parser = argparse.ArgumentParser()
             parser = self.add_model_specific_args(parser)
             hparams, _ = parser.parse_known_args()
+        
+        self.mtl = mtl
             
         # basic hyperparams
         if isinstance(hparams, dict):
@@ -129,6 +117,29 @@ class BartFinetuner(pl.LightningModule):
         self.learning_rate = self.hparams.learning_rate
         self.use_lr_scheduler = self.hparams.lr_scheduler
         self.decoder_start_token_id = None  # default to config (self.pad?)
+
+        # mtl setup
+        self.task_type = "standard"
+        if mtl:
+            if self.hparams.use_mtl_toks:
+                self.mtl_tok_ids = torch.tensor(self.tokenizer.convert_tokens_to_ids(MTL_TOKENS))
+                self.task_type = "s2s_mtl"
+            else:
+                self.task_type = "multihead_mtl"
+        print(f"Model configured for {self.task_type} task.")
+
+        # load pretained model
+        if self.task_type == "multihead_mtl":
+            self.model = BartMultiHead.from_pretrained(
+                "facebook/bart-base", return_dict=True, num_labels=4) # TODO: allow configurable num_labels
+        else:
+            self.model = BartForConditionalGeneration.from_pretrained(
+                "facebook/bart-base", return_dict=True)
+
+        # load pretained tokenizer and add new control tokens to vocab
+        self.tokenizer = BartTokenizer.from_pretrained(
+            'facebook/bart-base', add_prefix_space=True)
+        self.add_new_tokens(mtl=mtl)
 
         # evaluation hyperparams
         if self.hparams.eval_max_gen_length is not None:
@@ -160,7 +171,7 @@ class BartFinetuner(pl.LightningModule):
         return self.model(input_ids, **kwargs)
 
     def training_step(self, batch, batch_idx):
-        if self.mtl:
+        if self.task_type == "s2s_mtl":
             assert len(batch) == 5
             # prepare batch for each task
             batch_gen = batch[:3]
@@ -189,7 +200,7 @@ class BartFinetuner(pl.LightningModule):
             logs = {'train_loss': avg_loss}
 
             # log MTL individual losses
-            if self.mtl:
+            if self.task_type == "s2s_mtl":
                 logs["train_gen_loss"] = torch.stack(self.gen_losses).mean()
                 logs["train_clf_loss"] = torch.stack(self.clf_losses).mean()
                 self.gen_losses = []
@@ -375,6 +386,7 @@ class BartFinetuner(pl.LightningModule):
         parser.add_argument("--train_data_dir", type=str, default=None, required=False,)
         parser.add_argument("--valid_data_dir", type=str, default=None, required=False,)
         parser.add_argument("--use_mtl_toks", action="store_true")
+        parser.add_argument("--use_multihead", action="store_true")
         parser.add_argument("--mtl_weight", type=float, default=0.5)
         parser.add_argument("--simp_only", action="store_true")
 

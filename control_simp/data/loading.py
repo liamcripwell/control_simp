@@ -51,7 +51,7 @@ class LazyPreproDataset(Dataset):
     def __init__(self, df, data_dir, label_col=None, ctrl_tok_ids=None, mtl_tok_ids=None):
         self.df = df
         self.data_dir = data_dir
-        self.label_col = label_col
+        self.label_col = label_col # should only be set if using mtl or multihead
         self.ctrl_tok_ids = ctrl_tok_ids
         self.mtl_tok_ids = mtl_tok_ids
 
@@ -81,7 +81,9 @@ class LazyPreproDataset(Dataset):
             # load tokenized y sequence if standard generation task
             item += (torch.load(f"{self.data_dir}/{idx}_y.pt"),)
 
-            # TODO: also get clf label if using multi-heads
+            # also get clf label if using multi-heads
+            if self.label_col is not None:
+                item += (int(self.df.iloc[idx][self.label_col]),)
 
         return item
 
