@@ -82,6 +82,7 @@ class BartDataModule(pl.LightningDataModule):
         self.train_workers = self.hparams.train_workers
         self.collate_fn = pad_collate if self.train_data_dir is not None else None
         self.use_mtl_toks = False if "use_mtl_toks" not in self.hparams else self.hparams.use_mtl_toks
+        self.use_multihead = False if "use_multihead" not in self.hparams else self.hparams.use_multihead
         self.simp_only = False if "simp_only" not in self.hparams else self.hparams.simp_only
 
     def prepare_data(self):
@@ -122,12 +123,20 @@ class BartDataModule(pl.LightningDataModule):
     def build_datasets(self):
         if self.train_data_dir is None:
             # preprocess datasets
-            self.train = self.build_tensor_dataset(self.preprocess(
-                list(self.train[self.x_col]), list(self.train[self.y_col])))
-            self.validate = self.build_tensor_dataset(self.preprocess(
-                list(self.validate[self.x_col]), list(self.validate[self.y_col])))
-            self.test = self.build_tensor_dataset(self.preprocess(
-                list(self.test[self.x_col]), list(self.test[self.y_col])))
+            if self.use_multihead:
+                self.train = self.build_tensor_dataset(self.preprocess(
+                    list(self.train[self.x_col]), list(self.train[self.y_col]), list(self.train["label"])))
+                self.validate = self.build_tensor_dataset(self.preprocess(
+                    list(self.validate[self.x_col]), list(self.validate[self.y_col]), list(self.train["label"])))
+                self.test = self.build_tensor_dataset(self.preprocess(
+                    list(self.test[self.x_col]), list(self.test[self.y_col]), list(self.train["label"])))
+            else:
+                self.train = self.build_tensor_dataset(self.preprocess(
+                    list(self.train[self.x_col]), list(self.train[self.y_col])))
+                self.validate = self.build_tensor_dataset(self.preprocess(
+                    list(self.validate[self.x_col]), list(self.validate[self.y_col])))
+                self.test = self.build_tensor_dataset(self.preprocess(
+                    list(self.test[self.x_col]), list(self.test[self.y_col])))
         else:
             # get control token ids
             ctrl_tok_ids = None
@@ -136,18 +145,20 @@ class BartDataModule(pl.LightningDataModule):
                 ctrl_tok_ids = torch.tensor(self.tokenizer.convert_tokens_to_ids(control_simp.models.end_to_end.CONTROL_TOKENS))
                 mtl_tok_ids = torch.tensor(self.tokenizer.convert_tokens_to_ids(control_simp.models.end_to_end.MTL_TOKENS))
 
-            # TODO: only use label_col when necessary, i.e mtl or multihead
+            # only use label_col when necessary, i.e mtl or multihead
+            label_col = "label" if any([self.use_mtl_toks, self.use_multihead]) else None
+
             # prepare lazy loading datasets for pre-tokenized data
             self.train = LazyPreproDataset(
-                self.train, self.train_data_dir, label_col="label", ctrl_tok_ids=ctrl_tok_ids, mtl_tok_ids=mtl_tok_ids)
+                self.train, self.train_data_dir, label_col=label_col, ctrl_tok_ids=ctrl_tok_ids, mtl_tok_ids=mtl_tok_ids)
             if self.val_file is not None:
                 self.validate = LazyPreproDataset(
-                    self.validate, self.valid_data_dir, label_col="label", ctrl_tok_ids=ctrl_tok_ids, mtl_tok_ids=mtl_tok_ids)
+                    self.validate, self.valid_data_dir, label_col=label_col, ctrl_tok_ids=ctrl_tok_ids, mtl_tok_ids=mtl_tok_ids)
             else:
                 self.validate = LazyPreproDataset(
-                    self.validate, self.train_data_dir, label_col="label", ctrl_tok_ids=ctrl_tok_ids, mtl_tok_ids=mtl_tok_ids)
+                    self.validate, self.train_data_dir, label_col=label_col, ctrl_tok_ids=ctrl_tok_ids, mtl_tok_ids=mtl_tok_ids)
             self.test = LazyPreproDataset(
-                self.test, self.train_data_dir, label_col="label", ctrl_tok_ids=ctrl_tok_ids, mtl_tok_ids=mtl_tok_ids)
+                self.test, self.train_data_dir, label_col=label_col, ctrl_tok_ids=ctrl_tok_ids, mtl_tok_ids=mtl_tok_ids)
 
     def build_tensor_dataset(self, data):
         return TensorDataset(
@@ -168,7 +179,7 @@ class BartDataModule(pl.LightningDataModule):
         return DataLoader(self.test, batch_size=self.batch_size, num_workers=1, 
                             pin_memory=True, collate_fn=self.collate_fn)
 
-    def preprocess(self, source_sequences, target_sequences=None, pad_to_max_length=True, return_tensors="pt"):
+    def preprocess(self, source_sequences, target_sequences=None, labels=None, pad_to_max_length=True, return_tensors="pt"):
         """Transforms data into tokenized input/output sequences."""
         source_sequences = TokenFilter(max_len=self.max_source_length, blacklist=["<SEP>"])(source_sequences)
         transformed_x = self.tokenizer(source_sequences, max_length=self.max_source_length,
@@ -187,5 +198,8 @@ class BartDataModule(pl.LightningDataModule):
                                 padding=pad_to_max_length, truncation=True, 
                                 return_tensors=return_tensors, add_prefix_space=True)
             result["labels"] = transformed_y['input_ids']
+
+        if labels is not None:
+            result["clf_labels"] = torch.tensor(labels)
 
         return result
