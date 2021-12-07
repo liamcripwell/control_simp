@@ -161,11 +161,21 @@ class BartDataModule(pl.LightningDataModule):
                 self.test, self.train_data_dir, label_col=label_col, ctrl_tok_ids=ctrl_tok_ids, mtl_tok_ids=mtl_tok_ids)
 
     def build_tensor_dataset(self, data):
-        return TensorDataset(
-            data['input_ids'],
-            data['attention_mask'],
-            data['labels']
-        )
+        if self.use_multihead:
+            dataset = TensorDataset(
+                data['input_ids'],
+                data['attention_mask'],
+                data['labels'],
+                data['clf_labels']
+            )
+        else:
+            dataset = TensorDataset(
+                data['input_ids'],
+                data['attention_mask'],
+                data['labels']
+            )
+
+        return dataset
 
     def train_dataloader(self):
         return DataLoader(self.train, batch_size=self.batch_size, shuffle=True, num_workers=self.train_workers, 
