@@ -1,5 +1,4 @@
 import time
-import psutil
 import argparse
 from typing import Dict, List
 from collections import defaultdict
@@ -178,6 +177,8 @@ class BartFinetuner(pl.LightningModule):
             # combine task losses
             loss = (1-self.hparams.mtl_weight)*gen_loss + self.hparams.mtl_weight*clf_loss
         else:
+            # TODO: handle multihead case where we have (x, y, l)
+
             loss = self._step(batch)[0]
 
         self.train_losses.append(loss)

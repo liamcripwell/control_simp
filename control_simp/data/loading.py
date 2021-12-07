@@ -81,6 +81,8 @@ class LazyPreproDataset(Dataset):
             # load tokenized y sequence if standard generation task
             item += (torch.load(f"{self.data_dir}/{idx}_y.pt"),)
 
+            # TODO: also get clf label if using multi-heads
+
         return item
 
     def insert_mtl_tok(self, x, label):

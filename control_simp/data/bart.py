@@ -136,6 +136,7 @@ class BartDataModule(pl.LightningDataModule):
                 ctrl_tok_ids = torch.tensor(self.tokenizer.convert_tokens_to_ids(control_simp.models.end_to_end.CONTROL_TOKENS))
                 mtl_tok_ids = torch.tensor(self.tokenizer.convert_tokens_to_ids(control_simp.models.end_to_end.MTL_TOKENS))
 
+            # TODO: only use label_col when necessary, i.e mtl or multihead
             # prepare lazy loading datasets for pre-tokenized data
             self.train = LazyPreproDataset(
                 self.train, self.train_data_dir, label_col="label", ctrl_tok_ids=ctrl_tok_ids, mtl_tok_ids=mtl_tok_ids)
