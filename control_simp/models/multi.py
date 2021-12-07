@@ -60,6 +60,7 @@ class BartMultiHead(BartForConditionalGeneration):
         return_dict = return_dict if return_dict is not None else self.config.use_return_dict
 
         if y_seqs is not None:
+            # shift y tokens to the right
             if decoder_input_ids is None and decoder_inputs_embeds is None:
                 decoder_input_ids = shift_tokens_right(
                     y_seqs, self.config.pad_token_id, self.config.decoder_start_token_id

@@ -187,9 +187,13 @@ class BartFinetuner(pl.LightningModule):
 
             # combine task losses
             loss = (1-self.hparams.mtl_weight)*gen_loss + self.hparams.mtl_weight*clf_loss
-        else:
-            # TODO: handle multihead case where we have (x, y, l)
+        elif self.task_type == "multihead_mtl":
+            assert len(batch) == 4
 
+            loss, gen_loss, clf_loss = self._step(batch, return_all_loss=True)
+            self.gen_losses.append(gen_loss)
+            self.clf_losses.append(clf_loss)
+        else:
             loss = self._step(batch)[0]
 
         self.train_losses.append(loss)
@@ -200,7 +204,7 @@ class BartFinetuner(pl.LightningModule):
             logs = {'train_loss': avg_loss}
 
             # log MTL individual losses
-            if self.task_type == "s2s_mtl":
+            if self.task_type in ["s2s_mtl", "multihead_mtl"]:
                 logs["train_gen_loss"] = torch.stack(self.gen_losses).mean()
                 logs["train_clf_loss"] = torch.stack(self.clf_losses).mean()
                 self.gen_losses = []
@@ -211,28 +215,43 @@ class BartFinetuner(pl.LightningModule):
 
         return {"loss": loss}
 
-    def _step(self, batch):
-        input_ids, attention_mask, labels = batch
+    def _step(self, batch, return_all_loss=False):
+        if self.task_type == "multihead_mtl":
+            input_ids, attention_mask, y_ids, labels = batch
 
-        # shift the decoder input tokens to the right
-        decoder_input_ids = self.shift_tokens_right(labels, self.pad)
+            # forward pass and get loss
+            gen_out, clf_out = self(
+                input_ids,
+                attention_mask=attention_mask,
+                y_seqs=y_ids,
+                labels=labels,
+                use_cache=False)
+            gen_loss = gen_out["loss"]
+            clf_loss = clf_out["loss"]
 
-        # run model and get the logits
-        outputs = self(
-            input_ids,
-            attention_mask=attention_mask,
-            decoder_input_ids=decoder_input_ids,
-            use_cache=False)
-        lm_logits = outputs["logits"]
+            # combine task losses
+            loss = (1-self.hparams.mtl_weight)*gen_loss + self.hparams.mtl_weight*clf_loss
 
-        # compute loss
-        ce_loss_fct = torch.nn.CrossEntropyLoss(ignore_index=self.pad)
-        loss = ce_loss_fct(lm_logits.view(-1, lm_logits.shape[-1]), labels.view(-1))
+            if return_all_loss:
+                return (loss, gen_loss, clf_loss)
+        else:
+            input_ids, attention_mask, labels = batch
+
+            # run model and get the logits
+            outputs = self(
+                input_ids,
+                attention_mask=attention_mask,
+                labels=labels,
+                use_cache=False)
+                
+            # logits = outputs["logits"]
+            loss = outputs["loss"]
 
         return (loss,)
 
     def validation_step(self, batch, batch_idx) -> Dict:
-        batch = batch[:3] # enforce generation task
+        if self.task_type == "s2s_mtl":
+            batch = batch[:3] # enforce generation task
         if self.skip_val_gen:
             loss_tensors = self._step(batch)
             val_results = {name: loss for name, loss in zip(self.loss_names, loss_tensors)}
