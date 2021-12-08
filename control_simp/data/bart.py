@@ -46,6 +46,8 @@ def pretokenize(model, data, save_dir, x_col="complex", y_col="simple", max_samp
 def pad_collate(batch):
     if len(batch[0]) == 3:
         (xx, mm, yy) = zip(*batch)
+    elif len(batch[0]) == 4:
+        (xx, mm, yy, ll) = zip(*batch)
     else:
         (xx, mm, yy, zz, ll) = zip(*batch)
 
@@ -56,6 +58,9 @@ def pad_collate(batch):
         zz_pad = pad_sequence(zz, batch_first=True, padding_value=1)
         ll_pad = pad_sequence(ll, batch_first=True, padding_value=1)
         return xx_pad, mm_pad, yy_pad, zz_pad, ll_pad
+    elif len(batch[0]) == 4:
+        ll_pad = pad_sequence(ll, batch_first=True, padding_value=1)
+        return xx_pad, mm_pad, yy_pad, ll_pad
     else:
         return xx_pad, mm_pad, yy_pad
 
