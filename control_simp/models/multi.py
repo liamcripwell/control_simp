@@ -190,13 +190,6 @@ class BartMultiHead(BartForConditionalGeneration):
         clf_out = Seq2SeqSequenceClassifierOutput(
             loss=loss,
             logits=logits,
-            past_key_values=clf_decoder_outputs.past_key_values,
-            decoder_hidden_states=clf_decoder_outputs.decoder_hidden_states,
-            decoder_attentions=clf_decoder_outputs.decoder_attentions,
-            cross_attentions=clf_decoder_outputs.cross_attentions,
-            encoder_last_hidden_state=outputs.encoder_last_hidden_state,
-            encoder_hidden_states=outputs.encoder_hidden_states,
-            encoder_attentions=outputs.encoder_attentions,
         )
 
         return lm_out, clf_out
