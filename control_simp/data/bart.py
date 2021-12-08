@@ -59,8 +59,7 @@ def pad_collate(batch):
         ll_pad = pad_sequence(ll, batch_first=True, padding_value=1)
         return xx_pad, mm_pad, yy_pad, zz_pad, ll_pad
     elif len(batch[0]) == 4:
-        ll_pad = pad_sequence(ll, batch_first=True, padding_value=1)
-        return xx_pad, mm_pad, yy_pad, ll_pad
+        return xx_pad, mm_pad, yy_pad, ll
     else:
         return xx_pad, mm_pad, yy_pad
 
