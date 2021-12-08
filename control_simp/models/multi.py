@@ -83,6 +83,7 @@ class BartMultiHead(BartForConditionalGeneration):
     ):
         return_dict = return_dict if return_dict is not None else self.config.use_return_dict
 
+        # GENERATION TASK
         if y_seqs is not None:
             # shift y tokens to the right
             if decoder_input_ids is None and decoder_inputs_embeds is None:
@@ -90,10 +91,6 @@ class BartMultiHead(BartForConditionalGeneration):
                     y_seqs, self.config.pad_token_id, self.config.decoder_start_token_id
                 )
 
-        if labels is not None:
-            use_cache = False # NOTE: this is normally only use by BartForSequenceClassification
-
-        # run the BART model
         outputs = self.model(
             input_ids,
             attention_mask=attention_mask,
@@ -111,19 +108,18 @@ class BartMultiHead(BartForConditionalGeneration):
             output_hidden_states=output_hidden_states,
             return_dict=return_dict,
         )
-        hidden_states = outputs[0].clone()  # last hidden state
+        hidden_states = outputs[0]  # last hidden state
 
-        # generation task
-        lm_logits = self.lm_head(outputs[0]) + self.final_logits_bias
+        lm_logits = self.lm_head(hidden_states) + self.final_logits_bias
 
         masked_lm_loss = None
         if y_seqs is not None:
             loss_fct = CrossEntropyLoss()
             masked_lm_loss = loss_fct(lm_logits.view(-1, self.config.vocab_size), y_seqs.view(-1))
 
-        if not return_dict:
-            output = (lm_logits,) + outputs[1:]
-            return ((masked_lm_loss,) + output) if masked_lm_loss is not None else output
+        # if not return_dict:
+        #     output = (lm_logits,) + outputs[1:]
+        #     return ((masked_lm_loss,) + output) if masked_lm_loss is not None else output
 
         lm_out = Seq2SeqLMOutput(
             loss=masked_lm_loss,
@@ -137,12 +133,30 @@ class BartMultiHead(BartForConditionalGeneration):
             encoder_attentions=outputs.encoder_attentions,
         )
 
-        # classification task
+        # CLASSIFICATION TASK
+
+        # rerun decoder with original sentence as input (clf task)
+        clf_decoder_outputs = self.model.decoder(
+            input_ids=input_ids,
+            attention_mask=decoder_attention_mask,
+            encoder_hidden_states=outputs.encoder_hidden_states,
+            encoder_attention_mask=attention_mask,
+            head_mask=decoder_head_mask,
+            cross_attn_head_mask=cross_attn_head_mask,
+            past_key_values=past_key_values,
+            inputs_embeds=decoder_inputs_embeds,
+            use_cache=use_cache,
+            output_attentions=output_attentions,
+            output_hidden_states=output_hidden_states,
+            return_dict=return_dict,
+        )
+        clf_hidden_states = clf_decoder_outputs[0]
+
         eos_mask = input_ids.eq(self.config.eos_token_id)
 
         if len(torch.unique_consecutive(eos_mask.sum(1))) > 1:
             raise ValueError("All examples must have the same number of <eos> tokens.")
-        sentence_representation = hidden_states[eos_mask, :].view(hidden_states.size(0), -1, hidden_states.size(-1))[
+        sentence_representation = clf_hidden_states[eos_mask, :].view(clf_hidden_states.size(0), -1, clf_hidden_states.size(-1))[
             :, -1, :
         ]
         logits = self.classification_head(sentence_representation)
@@ -169,17 +183,17 @@ class BartMultiHead(BartForConditionalGeneration):
             elif self.config.problem_type == "multi_label_classification":
                 loss_fct = BCEWithLogitsLoss()
                 loss = loss_fct(logits, labels)
-        if not return_dict:
-            output = (logits,) + outputs[1:]
-            return ((loss,) + output) if loss is not None else output
+        # if not return_dict:
+        #     output = (logits,) + outputs[1:]
+        #     return ((loss,) + output) if loss is not None else output
 
         clf_out = Seq2SeqSequenceClassifierOutput(
             loss=loss,
             logits=logits,
-            past_key_values=outputs.past_key_values,
-            decoder_hidden_states=outputs.decoder_hidden_states,
-            decoder_attentions=outputs.decoder_attentions,
-            cross_attentions=outputs.cross_attentions,
+            past_key_values=clf_decoder_outputs.past_key_values,
+            decoder_hidden_states=clf_decoder_outputs.decoder_hidden_states,
+            decoder_attentions=clf_decoder_outputs.decoder_attentions,
+            cross_attentions=clf_decoder_outputs.cross_attentions,
             encoder_last_hidden_state=outputs.encoder_last_hidden_state,
             encoder_hidden_states=outputs.encoder_hidden_states,
             encoder_attentions=outputs.encoder_attentions,
