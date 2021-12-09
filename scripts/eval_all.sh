@@ -169,3 +169,8 @@ plain --samsa=False --ow=True --mtl=True
 python control_simp/models/eval.py bart /media/liam/data2/control_simp_ckps/h5rjjfhj/checkpoints/epoch=3-step=182698.ckpt \
 /media/liam/data2/simp_data/newsela-auto/newsela-auto/ACL2020/test_clf.csv /media/liam/data2/control_simp_ckps/h5rjjfhj \
 newsela --samsa=False --ow=True --mtl=True
+
+# multihead mtl
+python control_simp/models/eval.py bart /media/liam/data2/control_simp_ckps/77d9mnhi/checkpoints/epoch=3-step=193445.ckpt \
+/media/liam/data2/discourse_data/simp_clf_data/gen/control_simp_valid_exp1_clf.csv /media/liam/data2/control_simp_ckps/77d9mnhi \
+plain --samsa=False --ow=True --mtl=True --task=multihead_mtl

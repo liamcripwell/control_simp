@@ -123,7 +123,7 @@ def run_evaluation(df, x_col="complex", y_col="simple", pred_col="pred", metrics
 
 class Launcher(object):
 
-    def bart(self, model_loc, test_file, out_dir, name, pred_col="pred", ctrl_toks=None, max_samples=None, samsa=True, do_pred=True, device="cuda", ow=False, num_workers=8, mtl=False, beams=10):
+    def bart(self, model_loc, test_file, out_dir, name, pred_col="pred", ctrl_toks=None, max_samples=None, task=None, samsa=True, do_pred=True, device="cuda", ow=False, num_workers=8, mtl=False, beams=10):
         start = time.time()
         print(f"Starting time: {datetime.now()}")
 
@@ -136,7 +136,7 @@ class Launcher(object):
             test_set = test_set[:max_samples]
 
         print("Loading model...")
-        model = BartFinetuner.load_from_checkpoint(model_loc, mtl=mtl, strict=False).to(device).eval()
+        model = BartFinetuner.load_from_checkpoint(model_loc, mtl=mtl, task=task, strict=False).to(device).eval()
 
         # run generation on test data
         if do_pred and (ow or not os.path.isfile(pred_file)):

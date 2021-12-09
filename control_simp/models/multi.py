@@ -80,6 +80,7 @@ class BartMultiHead(BartForConditionalGeneration):
         output_attentions=None,
         output_hidden_states=None,
         return_dict=None,
+        do_clf=False,
     ):
         return_dict = return_dict if return_dict is not None else self.config.use_return_dict
 
@@ -132,6 +133,9 @@ class BartMultiHead(BartForConditionalGeneration):
             encoder_hidden_states=outputs.encoder_hidden_states,
             encoder_attentions=outputs.encoder_attentions,
         )
+
+        if not do_clf:
+            return lm_out
 
         # CLASSIFICATION TASK
 

@@ -228,7 +228,8 @@ class BartFinetuner(pl.LightningModule):
                 attention_mask=attention_mask,
                 y_seqs=y_ids,
                 labels=labels,
-                use_cache=False)
+                use_cache=False,
+                do_clf=True)
             gen_loss = gen_out["loss"]
             clf_loss = clf_out["loss"]
 
