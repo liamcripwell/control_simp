@@ -218,7 +218,7 @@ class BartFinetuner(pl.LightningModule):
 
         return {"loss": loss}
 
-    def _step(self, batch, return_all_loss=False):
+    def _step(self, batch, return_all_loss=False, valid=False):
         if self.task_type == "multihead_mtl":
             input_ids, attention_mask, y_ids, labels = batch
 
@@ -232,6 +232,9 @@ class BartFinetuner(pl.LightningModule):
                 do_clf=True)
             gen_loss = gen_out["loss"]
             clf_loss = clf_out["loss"]
+
+            if valid:
+                print(clf_out)
 
             # combine task losses
             loss = (1-self.hparams.mtl_weight)*gen_loss + self.hparams.mtl_weight*clf_loss
@@ -257,7 +260,7 @@ class BartFinetuner(pl.LightningModule):
         if self.task_type == "s2s_mtl":
             batch = batch[:3] # enforce generation task
         if self.skip_val_gen:
-            loss_tensors = self._step(batch)
+            loss_tensors = self._step(batch, valid=True)
             val_results = {name: loss for name, loss in zip(self.loss_names, loss_tensors)}
         else:
             val_results = self._generative_step(batch)
