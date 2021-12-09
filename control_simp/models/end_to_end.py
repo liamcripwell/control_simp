@@ -51,8 +51,8 @@ def run_generator(model, test_set, x_col="complex", ctrl_toks=None, max_samples=
                     new_seqs.append(CONTROL_TOKENS[labels[i]] + " " + input_seqs[i])
             input_seqs = new_seqs
 
-        # add generation task control-token if doing using MTL model
-        if model.mtl:
+        # add generation task control-token if doing using S2S MTL model
+        if model.mtl and model.task_type == "s2s_mtl":
             new_seqs = []
             for i in range(len(test_set)):
                 new_seqs.append("<gen> " + input_seqs[i])
