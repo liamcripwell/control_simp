@@ -260,7 +260,8 @@ class BartFinetuner(pl.LightningModule):
         if self.task_type == "s2s_mtl":
             batch = batch[:3] # enforce generation task
         if self.skip_val_gen:
-            loss_tensors = self._step(batch, valid=True)
+            valid = bool(batch_idx%100 == 0)
+            loss_tensors = self._step(batch, valid=valid)
             val_results = {name: loss for name, loss in zip(self.loss_names, loss_tensors)}
         else:
             val_results = self._generative_step(batch)
