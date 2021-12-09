@@ -98,7 +98,7 @@ class BartFinetuner(pl.LightningModule):
     metric_names = ["bleu"]
     default_val_metric = "bleu"
 
-    def __init__(self, hparams=None, mtl=False):
+    def __init__(self, hparams=None, mtl=False, task=None):
         super().__init__()
 
         # load default model args if no hparams specified
@@ -119,13 +119,16 @@ class BartFinetuner(pl.LightningModule):
         self.decoder_start_token_id = None  # default to config (self.pad?)
 
         # mtl setup
-        self.task_type = "standard"
-        if mtl:
-            if self.hparams.use_mtl_toks:
-                self.mtl_tok_ids = torch.tensor(self.tokenizer.convert_tokens_to_ids(MTL_TOKENS))
-                self.task_type = "s2s_mtl"
-            else:
-                self.task_type = "multihead_mtl"
+        if task is not None:
+            self.task_type = task
+        else:
+            self.task_type = "standard"
+            if mtl:
+                if self.hparams.use_mtl_toks:
+                    self.mtl_tok_ids = torch.tensor(self.tokenizer.convert_tokens_to_ids(MTL_TOKENS))
+                    self.task_type = "s2s_mtl"
+                else:
+                    self.task_type = "multihead_mtl"
         print(f"Model configured for {self.task_type} task.")
 
         # load pretained model
