@@ -142,7 +142,8 @@ class BartMultiHead(BartForConditionalGeneration):
         clf_out = self.clf_forward(
             input_ids_clone, # not sure if we need clone but ehh
             attention_mask=attention_mask,
-            encoder_outputs=outputs.encoder_hidden_states
+            encoder_outputs=outputs.encoder_hidden_states,
+            labels=labels
             #
         )
 
