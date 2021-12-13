@@ -60,16 +60,16 @@ def calculate_samsa(xx, yy_):
     return samsas
 
 def calculate_split_acc(xx, yy_, yy):
+    """Calculate"""
     accs = []
     for i in range(len(xx)):
         xs = len(sent_tokenize(xx[i]))
         ys = len(sent_tokenize(yy[i]))
         if ys > xs:
             y_s = len(sent_tokenize(yy_[i]))
-            if y_s > xs:
-                accs.append(True)
-                continue
-        accs.append(False)
+            accs.append(y_s > xs)
+            continue
+        accs.append(None)
     return accs
 
 
