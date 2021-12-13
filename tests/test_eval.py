@@ -17,7 +17,7 @@ def split_outputs():
 
 def test_split_acc(inputs, outputs, split_outputs):
     accs = calculate_split_acc(inputs, split_outputs, split_outputs)
-    assert accs == True
+    assert all(accs) == True
 
     accs = calculate_split_acc(inputs, outputs, split_outputs)
-    assert accs == False
+    assert all(accs) == False
