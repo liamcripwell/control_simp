@@ -21,3 +21,6 @@ def test_split_acc(inputs, outputs, split_outputs):
 
     accs = calculate_split_acc(inputs, outputs, split_outputs)
     assert all(accs) == False
+
+    accs = calculate_split_acc(inputs, outputs, outputs)
+    assert all([a is None for a in accs])
