@@ -15,7 +15,7 @@ from control_simp.models.recursive import RecursiveGenerator
 from control_simp.models.end_to_end import run_generator, BartFinetuner
 from control_simp.models.classification import run_classifier, LightningBert
 
-FAST_METRICS = ["sari", "bleu", "bertscore"]
+FAST_METRICS = ["sari", "bleu", "bertscore", "split_acc"]
 
 
 def calculate_bertscore(yy_, yy):
@@ -73,7 +73,7 @@ def calculate_split_acc(xx, yy_, yy):
     return accs
 
 
-def calculate_metrics(inputs, preds, refs, metrics=["blue", "sari"]):
+def calculate_metrics(inputs, preds, refs, metrics=FAST_METRICS):
     """Compute all evaluation metrics for provided data. SAMSA disabled by default."""
     results = {}
     if "bertscore" in metrics:
@@ -85,6 +85,9 @@ def calculate_metrics(inputs, preds, refs, metrics=["blue", "sari"]):
     if "sari" in metrics:
         print("Calculating SARIs...")
         results["sari"] = calculate_sari(inputs, preds, refs)
+    if "split_acc" in metrics:
+        print("Calculating Split Accs...")
+        results["split_acc"] = calculate_split_acc(inputs, preds, refs)
     if "samsa" in metrics:
         print("Calculating SAMSAs...")
         results["samsa"] = calculate_samsa(inputs, preds)
@@ -105,7 +108,7 @@ def clean_seqs(seqs, tokenizer=None):
 
     return clean
 
-def run_evaluation(df, x_col="complex", y_col="simple", pred_col="pred", metrics=["bleu", "sari"], tokenizer=None):
+def run_evaluation(df, x_col="complex", y_col="simple", pred_col="pred", metrics=FAST_METRICS, tokenizer=None):
     """
     Handles evaluation for `pandas.DataFrame` containing columns for inputs, references, and predictsions.
     """
