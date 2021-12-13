@@ -9,6 +9,7 @@ from easse.sari import corpus_sari
 from easse.bleu import sentence_bleu
 from easse.samsa import get_samsa_sentence_scores
 from easse.bertscore import get_bertscore_sentence_scores
+from nltk.tokenize import sent_tokenize
 
 from control_simp.models.recursive import RecursiveGenerator
 from control_simp.models.end_to_end import run_generator, BartFinetuner
@@ -58,6 +59,20 @@ def calculate_samsa(xx, yy_):
     samsas = get_samsa_sentence_scores(xx, yy_)
     return samsas
 
+def calculate_split_acc(xx, yy_, yy):
+    accs = []
+    for i in range(len(xx)):
+        xs = len(sent_tokenize(xx[i]))
+        ys = len(sent_tokenize(yy[i]))
+        if ys > xs:
+            y_s = len(sent_tokenize(yy_[i]))
+            if y_s > xs:
+                accs.append(True)
+                continue
+        accs.append(False)
+    return accs
+
+
 def calculate_metrics(inputs, preds, refs, metrics=["blue", "sari"]):
     """Compute all evaluation metrics for provided data. SAMSA disabled by default."""
     results = {}
@@ -82,7 +97,7 @@ def clean_seqs(seqs, tokenizer=None):
     """
     clean = []
     for y in seqs:
-        y = y.replace("<SEP> ", "")
+        y = y.replace("<SEP> ", "").replace("<sep> ", "")
         if tokenizer is not None:
             y_ids = tokenizer(y)["input_ids"]
             y = tokenizer.decode(y_ids, skip_special_tokens=True)
