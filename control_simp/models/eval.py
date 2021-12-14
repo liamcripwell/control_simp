@@ -9,12 +9,13 @@ from easse.sari import corpus_sari
 from easse.bleu import sentence_bleu
 from easse.samsa import get_samsa_sentence_scores
 from easse.bertscore import get_bertscore_sentence_scores
+from nltk.tokenize import sent_tokenize
 
 from control_simp.models.recursive import RecursiveGenerator
 from control_simp.models.end_to_end import run_generator, BartFinetuner
 from control_simp.models.classification import run_classifier, LightningBert
 
-FAST_METRICS = ["sari", "bleu", "bertscore"]
+FAST_METRICS = ["sari", "bleu", "bertscore", "split_acc"]
 
 
 def calculate_bertscore(yy_, yy):
@@ -58,7 +59,23 @@ def calculate_samsa(xx, yy_):
     samsas = get_samsa_sentence_scores(xx, yy_)
     return samsas
 
-def calculate_metrics(inputs, preds, refs, metrics=["blue", "sari"]):
+def calculate_split_acc(xx, yy_, yy):
+    """Calculate Split Recall for a full set of predictions."""
+    accs = []
+    if isinstance(yy[0], list):
+        raise ValueError("Cannot compute split recall for multi-refence test samples.")
+    for i in range(len(xx)):
+        xs = len(sent_tokenize(xx[i]))
+        ys = len(sent_tokenize(yy[i]))
+        if ys > xs:
+            y_s = len(sent_tokenize(yy_[i]))
+            accs.append(y_s > xs)
+            continue
+        accs.append(None)
+    return accs
+
+
+def calculate_metrics(inputs, preds, refs, metrics=FAST_METRICS):
     """Compute all evaluation metrics for provided data. SAMSA disabled by default."""
     results = {}
     if "bertscore" in metrics:
@@ -70,6 +87,9 @@ def calculate_metrics(inputs, preds, refs, metrics=["blue", "sari"]):
     if "sari" in metrics:
         print("Calculating SARIs...")
         results["sari"] = calculate_sari(inputs, preds, refs)
+    if "split_acc" in metrics:
+        print("Calculating Split Accs...")
+        results["split_acc"] = calculate_split_acc(inputs, preds, refs)
     if "samsa" in metrics:
         print("Calculating SAMSAs...")
         results["samsa"] = calculate_samsa(inputs, preds)
@@ -82,7 +102,7 @@ def clean_seqs(seqs, tokenizer=None):
     """
     clean = []
     for y in seqs:
-        y = y.replace("<SEP> ", "")
+        y = y.replace("<SEP> ", "").replace("<sep> ", "")
         if tokenizer is not None:
             y_ids = tokenizer(y)["input_ids"]
             y = tokenizer.decode(y_ids, skip_special_tokens=True)
@@ -90,7 +110,7 @@ def clean_seqs(seqs, tokenizer=None):
 
     return clean
 
-def run_evaluation(df, x_col="complex", y_col="simple", pred_col="pred", metrics=["bleu", "sari"], tokenizer=None):
+def run_evaluation(df, x_col="complex", y_col="simple", pred_col="pred", metrics=FAST_METRICS, tokenizer=None):
     """
     Handles evaluation for `pandas.DataFrame` containing columns for inputs, references, and predictsions.
     """
