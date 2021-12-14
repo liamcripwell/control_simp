@@ -60,8 +60,10 @@ def calculate_samsa(xx, yy_):
     return samsas
 
 def calculate_split_acc(xx, yy_, yy):
-    """Calculate"""
+    """Calculate Split Recall for a full set of predictions."""
     accs = []
+    if isinstance(yy[0], list):
+        raise ValueError("Cannot compute split recall for multi-refence test samples.")
     for i in range(len(xx)):
         xs = len(sent_tokenize(xx[i]))
         ys = len(sent_tokenize(yy[i]))

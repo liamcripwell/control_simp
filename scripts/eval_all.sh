@@ -69,7 +69,11 @@ clf --ctrl_toks=pred_l --samsa=False --ow=True
 
 python control_simp/models/eval.py bart /media/liam/data2/control_simp_ckps/12s3nazz/checkpoints/epoch\=6-step\=166580.ckpt \
 /media/liam/data2/simp_data/madella/newsela/data/test_set_clf.csv /media/liam/data2/control_simp_ckps/12s3nazz/ \
-maddela --ctrl_toks=pred_l --samsa=False --ow=True
+maddela_clf --ctrl_toks=pred_l --samsa=False --ow=True
+
+python control_simp/models/eval.py bart /media/liam/data2/control_simp_ckps/12s3nazz/checkpoints/epoch\=6-step\=166580.ckpt \
+/media/liam/data2/simp_data/madella/newsela/data/test_set_3clf.csv /media/liam/data2/control_simp_ckps/12s3nazz/ \
+maddela_3clf --ctrl_toks=pred_l --samsa=False --ow=True
 
 python control_simp/models/eval.py bart /media/liam/data2/control_simp_ckps/12s3nazz/checkpoints/epoch\=6-step\=166580.ckpt \
 /media/liam/data2/simp_data/madella/newsela/data/test_set_clf.csv /media/liam/data2/control_simp_ckps/12s3nazz/ \
@@ -82,6 +86,10 @@ oracle --ctrl_toks=label --samsa=False --ow=True
 python control_simp/models/eval.py bart /media/liam/data2/control_simp_ckps/12s3nazz/checkpoints/epoch\=6-step\=166580.ckpt \
 /media/liam/data2/simp_data/newsela-auto/newsela-auto/ACL2020/test_clf.csv /media/liam/data2/control_simp_ckps/12s3nazz \
 newsela --ctrl_toks=pred_l --samsa=False --ow=True
+
+python control_simp/models/eval.py bart /media/liam/data2/control_simp_ckps/12s3nazz/checkpoints/epoch\=6-step\=166580.ckpt \
+/media/liam/data2/simp_data/newsela-auto/newsela-auto/ACL2020/test_3clf.csv /media/liam/data2/control_simp_ckps/12s3nazz \
+newsela_3clf --ctrl_toks=pred_l --samsa=False --ow=True
 
 python control_simp/models/eval.py bart /media/liam/data2/control_simp_ckps/12s3nazz/checkpoints/epoch\=6-step\=166580.ckpt \
 /media/liam/data2/simp_data/newsela-auto/newsela-auto/ACL2020/test_clf.csv /media/liam/data2/control_simp_ckps/12s3nazz/ \
@@ -97,8 +105,12 @@ asset_3clf --ctrl_toks=pred_l --samsa=False --ow=True
 
 # 3-class ctrl-token
 python control_simp/models/eval.py bart /media/liam/data2/control_simp_ckps/25ldpr2h/checkpoints/epoch\=8-step\=170317.ckpt \
-/media/liam/data2/discourse_data/simp_clf_data/gen/control_simp_valid_exp1_3clf.csv /media/liam/data2/control_simp_ckps/25ldpr2h \
+/media/liam/data2/discourse_data/simp_clf_data/gen/control_simp_valid_exp1_clf.csv /media/liam/data2/control_simp_ckps/25ldpr2h \
 clf --ctrl_toks=pred_l --samsa=False --ow=True
+
+python control_simp/models/eval.py bart /media/liam/data2/control_simp_ckps/25ldpr2h/checkpoints/epoch\=8-step\=170317.ckpt \
+/media/liam/data2/discourse_data/simp_clf_data/gen/control_simp_valid_exp1_3clf.csv /media/liam/data2/control_simp_ckps/25ldpr2h \
+3clf --ctrl_toks=pred_l --samsa=False --ow=True
 
 python control_simp/models/eval.py bart /media/liam/data2/control_simp_ckps/25ldpr2h/checkpoints/epoch\=8-step\=170317.ckpt \
 /media/liam/data2/discourse_data/simp_clf_data/gen/control_simp_valid_exp1_clf.csv /media/liam/data2/control_simp_ckps/25ldpr2h \
@@ -109,8 +121,16 @@ python control_simp/models/eval.py bart /media/liam/data2/control_simp_ckps/25ld
 newsela --ctrl_toks=pred_l --samsa=False --ow=True
 
 python control_simp/models/eval.py bart /media/liam/data2/control_simp_ckps/25ldpr2h/checkpoints/epoch\=8-step\=170317.ckpt \
+/media/liam/data2/simp_data/newsela-auto/newsela-auto/ACL2020/test_3clf.csv /media/liam/data2/control_simp_ckps/25ldpr2h \
+newsela_3clf --ctrl_toks=pred_l --samsa=False --ow=True
+
+python control_simp/models/eval.py bart /media/liam/data2/control_simp_ckps/25ldpr2h/checkpoints/epoch\=8-step\=170317.ckpt \
 /media/liam/data2/simp_data/newsela-auto/newsela-auto/ACL2020/test_clf.csv /media/liam/data2/control_simp_ckps/25ldpr2h \
 newsela_oracle --ctrl_toks=label --samsa=False --ow=True
+
+python control_simp/models/eval.py bart /media/liam/data2/control_simp_ckps/25ldpr2h/checkpoints/epoch\=8-step\=170317.ckpt \
+/media/liam/data2/simp_data/madella/newsela/data/test_set_3clf.csv /media/liam/data2/control_simp_ckps/25ldpr2h/ \
+maddela_3clf --ctrl_toks=pred_l --samsa=False --ow=False --do_pred=False
 
 python control_simp/models/eval.py bart /media/liam/data2/control_simp_ckps/25ldpr2h/checkpoints/epoch\=8-step\=170317.ckpt \
 /media/liam/data2/simp_data/asset/dataset/asset_test_3clf.csv /media/liam/data2/control_simp_ckps/25ldpr2h \
