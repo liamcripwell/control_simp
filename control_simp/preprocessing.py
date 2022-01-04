@@ -51,9 +51,9 @@ def add_labels(df, x_col="complex", y_col="simple", sent_det=None):
             if len(sents) == 1:
                 if "lev_ratio" not in row:
                     # raise AttributeError("Data needs 'lev_ratio' column to assign labels. Use the `add_lev_ratio()` function to do so.")
-                    lev = ratio(row[x_col], y)
+                    row["lev_ratio"] = ratio(row[x_col], y)
 
-                if row.lev_ratio == 0.92 or lev > 0.92:
+                if row.lev_ratio == 0.92:
                     label = 0
                 else:
                     label = 1
