@@ -34,7 +34,7 @@ def add_labels(df, x_col="complex", y_col="simple", sent_det=None):
     for i, row in df.iterrows():
         label = None
 
-        if y_col.isinstance(list):
+        if isinstance(y_col, list):
             ys = [row[y] for y in y_col]
         else:
             ys = [row[y_col]]
