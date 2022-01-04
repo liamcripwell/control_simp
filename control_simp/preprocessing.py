@@ -5,14 +5,14 @@ from nltk import sent_tokenize
 from disco_split.processing.utils import find_adverbial
 
 
-def add_lev_ratio(df, xcol="complex", ycol="simple", reset=False):
+def add_lev_ratio(df, x_col="complex", y_col="simple", reset=False):
     levs = []
     for i, row in df.iterrows():
         if "lev_ratio" in row and not reset:
             if not np.isnan(row.lev_ratio):
                 lev = row.lev_ratio
         else:
-            lev = ratio(row[xcol], row[ycol])
+            lev = ratio(row[x_col], row[y_col])
         levs.append(lev)
 
     df["lev_ratio"] = levs
@@ -50,8 +50,10 @@ def add_labels(df, x_col="complex", y_col="simple", sent_det=None):
             # determine label
             if len(sents) == 1:
                 if "lev_ratio" not in row:
-                    raise AttributeError("Data needs 'lev_ratio' column to assign labels. Use the `add_lev_ratio()` function to do so.")
-                if row.lev_ratio == 1.0:
+                    # raise AttributeError("Data needs 'lev_ratio' column to assign labels. Use the `add_lev_ratio()` function to do so.")
+                    lev = ratio(row[x_col], y)
+
+                if row.lev_ratio == 0.92 or lev > 0.92:
                     label = 0
                 else:
                     label = 1
