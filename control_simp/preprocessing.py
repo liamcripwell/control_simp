@@ -68,7 +68,7 @@ def add_labels(df, x_col="complex", y_col="simple", sent_det=None):
         if len(ys) == 1:
             labels.append(_labels[0])
         else:
-            labels.append(label)
+            labels.append(_labels)
     
     df["label"] = labels
 
