@@ -1,6 +1,10 @@
 # Controllable Simplification via Operation Classification
 
-This repo contains code used to run experiments presented in the NAACL 2022 paper, "Controllable Sentence Simplification via Operation Classification"
+This repo contains code used to run experiments presented in the NAACL 2022 paper, "Controllable Sentence Simplification via Operation Classification".
+
+## IRSD data
+
+The IRSD dataset is available in [data/irsd_data.zip](data/irsd_data.zip). The publicly available version does not include any examples from Newsela-auto. To obtain the Newsela-auto examples, please obtain permission from Newsela before contacting the authors directly.
 
 ## Training models
 
