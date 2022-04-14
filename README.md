@@ -4,7 +4,7 @@ This repo contains code used to run experiments presented in the NAACL 2022 pape
 
 ## IRSD data
 
-The IRSD dataset is available in [data/](data/). The publicly available version does not include any examples from Newsela-auto. To obtain the Newsela-auto examples, please obtain permission from Newsela before contacting the authors directly.
+The IRSD dataset is available in [data/](data/). The publicly available version does not include any examples from Newsela-auto. To access the Newsela-auto examples, please obtain a licence from Newsela before contacting the authors directly.
 
 ## Training models
 
