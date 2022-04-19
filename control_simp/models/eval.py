@@ -132,12 +132,13 @@ def run_evaluation(df, x_col="complex", y_col="simple", pred_col="pred", metrics
     else:
         raise ValueError(f"Could not find column '{y_col}' in data.")
     
-    if isinstance(refs[0], list):
-        refs = [clean_seqs(refs[0], tokenizer) for i in range(len(refs))]
-    else:
-        refs = clean_seqs(refs, tokenizer)
-    inputs = clean_seqs(inputs, tokenizer)
-    preds = clean_seqs(preds, tokenizer)
+    if tokenizer is not None:
+        if isinstance(refs[0], list):
+            refs = [clean_seqs(refs[0], tokenizer) for i in range(len(refs))]
+        else:
+            refs = clean_seqs(refs, tokenizer)
+        inputs = clean_seqs(inputs, tokenizer)
+        preds = clean_seqs(preds, tokenizer)
 
     return calculate_metrics(inputs, preds, refs, metrics=metrics)
 
