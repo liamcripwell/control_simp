@@ -34,10 +34,6 @@ python control_simp/models/eval.py bart /media/liam/data2/control_simp_ckps/3fn5
 madella --samsa=False --ow=True
 
 python control_simp/models/eval.py bart /media/liam/data2/control_simp_ckps/3fn5qcza/checkpoints/epoch\=0.ckpt \
-/media/liam/data2/simp_data/asset/dataset/asset_test.csv /media/liam/data2/control_simp_ckps/3fn5qcza \
-plain --samsa=False --ow=True
-
-python control_simp/models/eval.py bart /media/liam/data2/control_simp_ckps/3fn5qcza/checkpoints/epoch\=0.ckpt \
 /media/liam/data2/simp_data/newsela-auto/newsela-auto/ACL2020/test_clf.csv /media/liam/data2/control_simp_ckps/3fn5qcza \
 newsela --samsa=False --ow=True
 

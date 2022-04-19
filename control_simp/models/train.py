@@ -70,7 +70,7 @@ if __name__ == '__main__':
         val_check_interval=args.val_check_interval,
         logger=wandb_logger,
         accelerator="ddp",
-        plugins=DDPPlugin(find_unused_parameters=False),
+        strategy=DDPPlugin(find_unused_parameters=False),
         callbacks=[checkpoint_callback],
         precision=16,)
 

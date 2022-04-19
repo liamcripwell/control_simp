@@ -61,18 +61,19 @@ def calculate_samsa(xx, yy_):
 
 def calculate_split_acc(xx, yy_, yy):
     """Calculate Split Recall for a full set of predictions."""
-    accs = []
+    pred_splits = []
+    gold_splits = []
     if isinstance(yy[0], list):
         raise ValueError("Cannot compute split recall for multi-refence test samples.")
     for i in range(len(xx)):
         xs = len(sent_tokenize(xx[i]))
         ys = len(sent_tokenize(yy[i]))
-        if ys > xs:
-            y_s = len(sent_tokenize(yy_[i]))
-            accs.append(y_s > xs)
-            continue
-        accs.append(None)
-    return accs
+        y_s = len(sent_tokenize(yy_[i]))
+
+        pred_splits.append(y_s > xs)
+        gold_splits.append(ys > xs)
+
+    return pred_splits, gold_splits
 
 
 def calculate_metrics(inputs, preds, refs, metrics=FAST_METRICS):
@@ -89,7 +90,7 @@ def calculate_metrics(inputs, preds, refs, metrics=FAST_METRICS):
         results["sari"] = calculate_sari(inputs, preds, refs)
     if "split_acc" in metrics:
         print("Calculating Split Accs...")
-        results["split_acc"] = calculate_split_acc(inputs, preds, refs)
+        results["pred_splits"], results["gold_splits"] = calculate_split_acc(inputs, preds, refs)
     if "samsa" in metrics:
         print("Calculating SAMSAs...")
         results["samsa"] = calculate_samsa(inputs, preds)
@@ -211,7 +212,7 @@ class Launcher(object):
         if "label" in test_set.columns:
             # check if predictions are correct
             correct = []
-            for i, row in test_set[:max_samples].iterrows():
+            for _, row in test_set[:max_samples].iterrows():
                 correct.append(int(row.pred_l) == int(row.label))
             test_set["correct"] = correct
             print(f"Overall accuracy: {test_set['correct'].sum() / len(test_set)}")
