@@ -6,6 +6,40 @@ This repo contains code used to run experiments presented in the NAACL 2022 pape
 
 The IRSD dataset is available in [data/](data/). The publicly available version does not include any examples from Newsela-auto. To access the Newsela-auto examples, please obtain a licence from Newsela before contacting the authors directly.
 
+## Pretrained models
+
+Pretrained PyTorch models for the 4-class operation classifier and controllable simplification model are available on [HuggingFace](https://huggingface.co/liamcripwell).
+
+To use the classifier:
+
+```python
+from transformers import RobertaForSequenceClassification, AutoTokenizer
+
+model = RobertaForSequenceClassification.from_pretrained("liamcripwell/ctrl44-clf")
+tokenizer = AutoTokenizer.from_pretrained("liamcripwell/ctrl44-clf")
+
+text = "Barack Hussein Obama II is an American politician who served as the 44th president of the United States from 2009 to 2017."
+inputs = tokenizer(text, return_tensors="pt")
+
+with torch.no_grad():
+  logits = model(**inputs).logits
+predicted_class_id = logits.argmax().item()
+predicted_class_name = model.config.id2label[predicted_class_id]
+```
+
+To use the controllable simplification model:
+
+```python
+from transformers import BartForConditionalGeneration, AutoTokenizer
+
+model = BartForConditionalGeneration.from_pretrained("liamcripwell/ctrl44-simp")
+tokenizer = AutoTokenizer.from_pretrained("liamcripwell/ctrl44-simp")
+
+text = "<para> Barack Hussein Obama II is an American politician who served as the 44th president of the United States from 2009 to 2017."
+inputs = tokenizer(text, return_tensors="pt")
+outputs = model.generate(**inputs, num_beams=10, max_length=128)
+```
+
 ## Training models
 
 The following is an example of how to train a RoBERTa-based operation classifier:
@@ -22,7 +56,7 @@ python control_simp/models/train.py --arch=bart --data_file=<train_file.csv> --v
 
 See the source code for additional arguments.
 
-## Running models
+## Evaluating models
 
 Operation classifiers can be run from the terminal as follows (`test_file` should be a `.csv`):
 
