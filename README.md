@@ -1,6 +1,6 @@
 # Controllable Simplification via Operation Classification
 
-This repo contains code used to run experiments presented in the NAACL 2022 paper, "Controllable Sentence Simplification via Operation Classification".
+This repo contains code and data used to run experiments presented in the NAACL 2022 paper, [Controllable Sentence Simplification via Operation Classification](https://aclanthology.org/2022.findings-naacl.161/).
 
 ## IRSD data
 
@@ -72,4 +72,25 @@ python control_simp/models/eval.py bart <model_ckpt> <test_file> <output_dir> <r
 
 # CTRL Model
 python control_simp/models/eval.py bart <model_ckpt> <test_file> <output_dir> <run_name> --ctrl_toks=<label_col> --samsa=False
+```
+
+## Citation
+
+If you find this repository useful, please cite our publication [Controllable Sentence Simplification via Operation Classification](https://aclanthology.org/2022.findings-naacl.161/).
+
+```bibtex
+@inproceedings{cripwell-etal-2022-controllable,
+    title = "Controllable Sentence Simplification via Operation Classification",
+    author = {Cripwell, Liam  and
+      Legrand, Jo{\"e}l  and
+      Gardent, Claire},
+    booktitle = "Findings of the Association for Computational Linguistics: NAACL 2022",
+    month = jul,
+    year = "2022",
+    address = "Seattle, United States",
+    publisher = "Association for Computational Linguistics",
+    url = "https://aclanthology.org/2022.findings-naacl.161",
+    pages = "2091--2103",
+}
+
 ```
